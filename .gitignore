@@ -1,0 +1,12 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+
+# Keep the dashboard and images for GitHub Pages
+# but ignore the daily_content JSON files
+.tmp/daily_content/
+
+# OS files
+.DS_Store
+Thumbs.db

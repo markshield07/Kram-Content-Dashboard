@@ -1,0 +1,21 @@
+{
+  "name": "KRAM's Mutant Ape",
+  "description": "A Mutant Ape Yacht Club NFT character with distinctive features",
+  "traits": {
+    "fur": "Cheetah/leopard print - yellow-gold base with brown spots",
+    "eyes": "Glowing golden coin eyes with sparkle effects, dripping gold",
+    "mouth": "Wide grin with mint green gradient teeth, pink gums visible",
+    "facial_hair": "Brown mustache and beard, shaggy texture",
+    "headwear": "White bunny ears headpiece with pink/brown inner ears, each ear has a small cartoon face",
+    "accessories": "Small silver piercing in left ear",
+    "expression": "Mischievous grin, wild energy",
+    "companion": "Small cheetah creature at bottom with orange eyes and spotted fur"
+  },
+  "colors": {
+    "primary": "Yellow-gold with brown spots",
+    "secondary": "Mint green (teeth)",
+    "accent": "Gold (eyes), White (bunny ears)",
+    "background": "Purple/midnight blue (#4A4A8A approximate)"
+  },
+  "vibe": "Chaotic, playful, crypto-degen energy, mutant aesthetic"
+}

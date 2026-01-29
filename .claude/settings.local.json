@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python execution/analyze_posts.py:*)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(setup_scheduler.bat)",
+      "Bash(schtasks /create /tn \"KRAM_Daily_Content\" /tr \"pythonw \"\"C:\\\\Users\\\\marks\\\\X Content Creator\\\\execution\\\\daily_run.py\"\"\" /sc daily /st 06:00 /f)",
+      "Bash(cmd.exe /c \"schtasks /create /tn KRAM_Daily_Content /tr \"\"pythonw C:\\\\Users\\\\marks\\\\X Content Creator\\\\execution\\\\daily_run.py\"\" /sc daily /st 06:00 /f\")",
+      "Bash(git init:*)",
+      "Bash(gh:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}
