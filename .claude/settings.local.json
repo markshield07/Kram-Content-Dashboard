@@ -10,7 +10,10 @@
       "Bash(cmd.exe /c \"schtasks /create /tn KRAM_Daily_Content /tr \"\"pythonw C:\\\\Users\\\\marks\\\\X Content Creator\\\\execution\\\\daily_run.py\"\" /sc daily /st 06:00 /f\")",
       "Bash(git init:*)",
       "Bash(gh:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
     ]
   }
 }

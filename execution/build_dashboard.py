@@ -87,21 +87,28 @@ def generate_html(content, target_date):
             </div>
             '''
 
+        # Get image data URL for X posting
+        image_data_url = image_to_base64(image_path) if image_path else ''
+
         post_cards += f'''
-        <div class="post-card">
+        <div class="post-card" data-post-index="{i}">
             <div class="post-header">
                 <span class="post-type {post_type}">{post_type.replace('_', ' ').upper()}</span>
                 <span class="post-time">{suggested_time}</span>
             </div>
             {image_section}
-            <div class="post-text">{post_text}</div>
+            <div class="post-text-container">
+                <div class="post-text" id="post-text-{i}">{post_text}</div>
+                <button class="btn-edit" onclick="editPost({i})" title="Edit post">&#9998;</button>
+            </div>
             <div class="prompt-section">
                 <div class="prompt-label">Image Prompt</div>
                 <div class="prompt-text">{image_prompt}</div>
             </div>
             <div class="post-actions">
-                <button class="btn btn-copy-post" onclick="copyText(this, '{post_text_js}')">Copy Post</button>
+                <button class="btn btn-copy-post" onclick="copyText(this, document.getElementById('post-text-{i}').innerText)">Copy Post</button>
                 <button class="btn btn-copy-prompt" onclick="copyText(this, '{image_prompt_js}')">Copy Prompt</button>
+                <button class="btn btn-post-x" onclick="postToX({i}, '{image_data_url}')">Post to X</button>
             </div>
         </div>
         '''
@@ -282,13 +289,6 @@ def generate_html(content, target_date):
             color: #000;
         }}
 
-        .post-text {{
-            font-size: 24px;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            color: #fff;
-        }}
-
         .prompt-section {{
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
@@ -337,12 +337,63 @@ def generate_html(content, target_date):
             border: 1px solid rgba(255,255,255,0.2);
         }}
 
+        .btn-post-x {{
+            background: #000;
+            color: #fff;
+            border: 1px solid #fff;
+        }}
+
+        .btn-post-x:hover {{
+            background: #1da1f2;
+            border-color: #1da1f2;
+        }}
+
+        .post-text-container {{
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }}
+
+        .post-text {{
+            flex: 1;
+            font-size: 24px;
+            line-height: 1.4;
+            color: #fff;
+            margin-bottom: 0;
+        }}
+
+        .post-text[contenteditable="true"] {{
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+            outline: 2px solid #ffd700;
+        }}
+
+        .btn-edit {{
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }}
+
+        .btn-edit:hover {{
+            color: #ffd700;
+        }}
+
+        .btn-edit.editing {{
+            color: #00ff88;
+        }}
+
         .btn:hover {{
             opacity: 0.8;
             transform: scale(1.02);
         }}
 
-        .btn.copied {{
+        .btn.copied, .btn.posted {{
             background: #00ff88 !important;
             color: #000 !important;
         }}
@@ -498,6 +549,55 @@ def generate_html(content, target_date):
         document.addEventListener('keydown', function(e) {{
             if (e.key === 'Escape') closeModal();
         }});
+
+        // Edit post text
+        function editPost(index) {{
+            const textEl = document.getElementById('post-text-' + index);
+            const btnEl = textEl.parentElement.querySelector('.btn-edit');
+
+            if (textEl.contentEditable === 'true') {{
+                // Save - exit edit mode
+                textEl.contentEditable = 'false';
+                btnEl.classList.remove('editing');
+                btnEl.innerHTML = '&#9998;';
+            }} else {{
+                // Enter edit mode
+                textEl.contentEditable = 'true';
+                textEl.focus();
+                btnEl.classList.add('editing');
+                btnEl.innerHTML = '&#10003;';
+
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(textEl);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }}
+        }}
+
+        // Post to X (Twitter)
+        function postToX(index, imageDataUrl) {{
+            const textEl = document.getElementById('post-text-' + index);
+            const postText = textEl.innerText;
+
+            // For now, open X with pre-filled text (image upload requires API)
+            // The image will need to be downloaded and attached manually, or use the API
+            const tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(postText);
+
+            // Open in new window
+            window.open(tweetUrl, '_blank', 'width=550,height=420');
+
+            // Show feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Opened!';
+            btn.classList.add('posted');
+            setTimeout(() => {{
+                btn.textContent = originalText;
+                btn.classList.remove('posted');
+            }}, 2000);
+        }}
     </script>
 </body>
 </html>
