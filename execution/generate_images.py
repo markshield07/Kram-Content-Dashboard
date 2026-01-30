@@ -31,30 +31,66 @@ load_dotenv(BASE_DIR / ".env")
 # Paths
 CONTENT_DIR = BASE_DIR / ".tmp" / "daily_content"
 IMAGES_DIR = BASE_DIR / ".tmp" / "images"
-REFERENCE_IMAGE = BASE_DIR / "assets" / "mutant-ape" / "mutant_ape.png"
+
+# Reference images
+MUTANT_APE_IMAGE = BASE_DIR / "assets" / "mutant-ape" / "mutant_ape.png"
+
+# GM reference images (used in round-robin for GM posts)
+GM_IMAGES = [
+    BASE_DIR / "assets" / "gm" / "gm_flag.png",
+    BASE_DIR / "assets" / "gm" / "gm_coffee_cup.png",
+    BASE_DIR / "assets" / "gm" / "gm_steaming_mug_1.png",
+    BASE_DIR / "assets" / "gm" / "gm_steaming_mug_2.png",
+]
+
+# Track which GM image to use next (round-robin)
+_gm_image_index = 0
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def generate_image(style_prompt: str, output_path: Path, suggested_time: str = None) -> bool:
+def get_reference_image(post_type: str) -> Path:
+    """Get the appropriate reference image based on post type."""
+    global _gm_image_index
+
+    if post_type == "gm":
+        # Use GM images in round-robin
+        available_gm = [img for img in GM_IMAGES if img.exists()]
+        if available_gm:
+            image = available_gm[_gm_image_index % len(available_gm)]
+            _gm_image_index += 1
+            return image
+        else:
+            print("  WARNING: No GM images found, falling back to mutant ape")
+            return MUTANT_APE_IMAGE
+    else:
+        # For Mutant Monday and all other posts, use the mutant ape
+        return MUTANT_APE_IMAGE
+
+
+def generate_image(style_prompt: str, output_path: Path, suggested_time: str = None, post_type: str = None) -> bool:
     """Generate an image using gpt-image-1 with reference image."""
     try:
-        if not REFERENCE_IMAGE.exists():
-            print(f"  ERROR: Reference image not found at {REFERENCE_IMAGE}")
+        reference_image = get_reference_image(post_type or "default")
+
+        if not reference_image.exists():
+            print(f"  ERROR: Reference image not found at {reference_image}")
             return False
+
+        print(f"  Using reference: {reference_image.name}")
 
         # Use the style prompt directly (it already starts with "Reimagine this character")
         full_prompt = style_prompt
 
-        # Add coffee cup with "GM" text for morning posts
-        if suggested_time == "morning":
+        # Add coffee cup with "GM" text for morning posts (only if not already a GM image)
+        if suggested_time == "morning" and post_type != "gm":
             full_prompt += " Include a coffee cup with the text 'GM' on it."
 
         print(f"  Generating with gpt-image-1...")
 
         # Read the reference image
-        with open(REFERENCE_IMAGE, "rb") as image_file:
+        with open(reference_image, "rb") as image_file:
             response = client.images.edit(
                 model="gpt-image-1",
                 image=image_file,
@@ -145,7 +181,8 @@ def process_daily_content(target_date: str, regenerate: bool = False):
     date_images_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Generating images for {target_date}")
-    print(f"Reference image: {REFERENCE_IMAGE}")
+    print(f"GM reference images: {len([img for img in GM_IMAGES if img.exists()])} available")
+    print(f"Mutant ape reference: {MUTANT_APE_IMAGE.name}")
     print(f"Posts to process: {len(content['posts'])}")
     print("=" * 50)
 
@@ -162,8 +199,13 @@ def process_daily_content(target_date: str, regenerate: bool = False):
             post['image_path'] = str(image_path.relative_to(BASE_DIR))
             continue
 
-        # Generate image (pass suggested_time for morning coffee cup addition)
-        success = generate_image(post['image_prompt'], image_path, post.get('suggested_time'))
+        # Generate image (pass suggested_time and post_type for reference image selection)
+        success = generate_image(
+            post['image_prompt'],
+            image_path,
+            post.get('suggested_time'),
+            post.get('post_type')
+        )
 
         if success:
             post['image_path'] = str(image_path.relative_to(BASE_DIR))

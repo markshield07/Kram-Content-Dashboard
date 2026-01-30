@@ -119,6 +119,21 @@ def generate_html(content, target_date):
                 <div class="prompt-label">IMAGE PROMPT</div>
                 <div class="prompt-text">{image_prompt}</div>
             </div>
+            <div class="feedback-section">
+                <span class="feedback-label">Rate this content:</span>
+                <div class="feedback-buttons">
+                    <button class="feedback-btn thumbs-up" data-post="{i}" data-date="{target_date}" onclick="rateFeedback({i}, '{target_date}', 'up')" title="I like this">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        </svg>
+                    </button>
+                    <button class="feedback-btn thumbs-down" data-post="{i}" data-date="{target_date}" onclick="rateFeedback({i}, '{target_date}', 'down')" title="Not for me">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             <div class="post-actions">
                 <button class="btn btn-primary" onclick="copyText(this, document.getElementById('post-text-{i}').innerText)">Copy Post</button>
                 <button class="btn btn-secondary" onclick="copyText(this, '{image_prompt_js}')">Copy Prompt</button>
@@ -579,6 +594,134 @@ def generate_html(content, target_date):
             border-color: var(--success) !important;
         }}
 
+        /* Feedback Section */
+        .feedback-section {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            margin-bottom: 15px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }}
+
+        .feedback-label {{
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+
+        .feedback-buttons {{
+            display: flex;
+            gap: 8px;
+        }}
+
+        .feedback-btn {{
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }}
+
+        .feedback-btn:hover {{
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }}
+
+        .feedback-btn.active.thumbs-up {{
+            background: rgba(0, 208, 132, 0.2);
+            border-color: var(--success);
+            color: var(--success);
+        }}
+
+        .feedback-btn.active.thumbs-down {{
+            background: rgba(255, 82, 82, 0.2);
+            border-color: #ff5252;
+            color: #ff5252;
+        }}
+
+        .feedback-btn svg {{
+            pointer-events: none;
+        }}
+
+        /* Filter Toggle */
+        .filter-toggle {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+
+        .toggle-label {{
+            font-size: 12px;
+            color: var(--text-muted);
+        }}
+
+        .toggle-switch {{
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }}
+
+        .toggle-switch input {{
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }}
+
+        .toggle-slider {{
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            transition: 0.3s;
+        }}
+
+        .toggle-slider:before {{
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-muted);
+            border-radius: 50%;
+            transition: 0.3s;
+        }}
+
+        .toggle-switch input:checked + .toggle-slider {{
+            background-color: var(--accent);
+            border-color: var(--accent);
+        }}
+
+        .toggle-switch input:checked + .toggle-slider:before {{
+            transform: translateX(20px);
+            background-color: #000;
+        }}
+
+        .post-card.hidden {{
+            display: none;
+        }}
+
+        .post-card.fade-out {{
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+        }}
+
         /* Modal */
         .modal {{
             display: none;
@@ -784,14 +927,14 @@ def generate_html(content, target_date):
                 <div class="stat-subtitle">Generated with AI</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">GM Posts</div>
-                <div class="stat-value">{gm_count}</div>
-                <div class="stat-subtitle">Morning content</div>
+                <div class="stat-label">Liked</div>
+                <div class="stat-value"><span id="stat-liked" style="color: var(--success); font-size: 32px; margin: 0;">0</span></div>
+                <div class="stat-subtitle">Posts you liked</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Themed</div>
-                <div class="stat-value">{themed_count}</div>
-                <div class="stat-subtitle">Special posts</div>
+                <div class="stat-label">Disliked</div>
+                <div class="stat-value"><span id="stat-disliked" style="color: #ff5252; font-size: 32px; margin: 0;">0</span></div>
+                <div class="stat-subtitle">Needs improvement</div>
             </div>
         </div>
 
@@ -799,6 +942,13 @@ def generate_html(content, target_date):
         <div class="content-area">
             <div class="section-header">
                 <h2 class="section-title">Today's Content</h2>
+                <div class="filter-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showDisliked" onchange="toggleDislikedFilter()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">Show disliked (<span id="hidden-count">0</span> hidden)</span>
+                </div>
             </div>
 
             <div class="posts-grid">
@@ -894,6 +1044,156 @@ def generate_html(content, target_date):
                 btn.textContent = originalText;
                 btn.classList.remove('posted');
             }}, 2000);
+        }}
+
+        // Feedback system
+        function getFeedbackData() {{
+            const data = localStorage.getItem('kram_feedback');
+            return data ? JSON.parse(data) : {{}};
+        }}
+
+        function saveFeedbackData(data) {{
+            localStorage.setItem('kram_feedback', JSON.stringify(data));
+        }}
+
+        function rateFeedback(postIndex, date, rating) {{
+            const feedbackData = getFeedbackData();
+            const key = date + '_' + postIndex;
+
+            // Get current rating for this post
+            const currentRating = feedbackData[key]?.rating;
+
+            // Get post card for animation
+            const postTextEl = document.getElementById('post-text-' + postIndex);
+            const postCard = postTextEl.closest('.post-card');
+
+            // Toggle off if clicking same rating, otherwise set new rating
+            if (currentRating === rating) {{
+                delete feedbackData[key];
+            }} else {{
+                // Get post details for learning
+                const postType = postCard.querySelector('.post-type').textContent;
+                const promptText = postCard.querySelector('.prompt-text').textContent;
+
+                feedbackData[key] = {{
+                    date: date,
+                    postIndex: postIndex,
+                    rating: rating,
+                    postType: postType,
+                    postText: postTextEl.innerText,
+                    imagePrompt: promptText,
+                    timestamp: new Date().toISOString()
+                }};
+
+                // If disliked and filter is on, animate and hide
+                if (rating === 'down' && !document.getElementById('showDisliked').checked) {{
+                    postCard.classList.add('fade-out');
+                    setTimeout(() => {{
+                        postCard.classList.add('hidden');
+                        postCard.classList.remove('fade-out');
+                        updateHiddenCount();
+                    }}, 300);
+                }}
+            }}
+
+            saveFeedbackData(feedbackData);
+            updateFeedbackUI(postIndex, date);
+            updateFeedbackStats();
+            updateHiddenCount();
+        }}
+
+        function updateFeedbackUI(postIndex, date) {{
+            const feedbackData = getFeedbackData();
+            const key = date + '_' + postIndex;
+            const rating = feedbackData[key]?.rating;
+
+            // Find the buttons for this post
+            const upBtn = document.querySelector(`.thumbs-up[data-post="${{postIndex}}"][data-date="${{date}}"]`);
+            const downBtn = document.querySelector(`.thumbs-down[data-post="${{postIndex}}"][data-date="${{date}}"]`);
+
+            if (upBtn) {{
+                upBtn.classList.toggle('active', rating === 'up');
+            }}
+            if (downBtn) {{
+                downBtn.classList.toggle('active', rating === 'down');
+            }}
+        }}
+
+        function updateFeedbackStats() {{
+            const feedbackData = getFeedbackData();
+            const entries = Object.values(feedbackData);
+            const liked = entries.filter(e => e.rating === 'up').length;
+            const disliked = entries.filter(e => e.rating === 'down').length;
+
+            // Update stats if elements exist
+            const likedEl = document.getElementById('stat-liked');
+            const dislikedEl = document.getElementById('stat-disliked');
+            if (likedEl) likedEl.textContent = liked;
+            if (dislikedEl) dislikedEl.textContent = disliked;
+        }}
+
+        // Filter disliked posts
+        function toggleDislikedFilter() {{
+            const showDisliked = document.getElementById('showDisliked').checked;
+            const feedbackData = getFeedbackData();
+
+            document.querySelectorAll('.post-card').forEach(card => {{
+                const postIndex = card.querySelector('.thumbs-up')?.dataset.post;
+                const date = card.querySelector('.thumbs-up')?.dataset.date;
+                const key = date + '_' + postIndex;
+                const rating = feedbackData[key]?.rating;
+
+                if (rating === 'down' && !showDisliked) {{
+                    card.classList.add('hidden');
+                }} else {{
+                    card.classList.remove('hidden');
+                }}
+            }});
+
+            updateHiddenCount();
+        }}
+
+        function updateHiddenCount() {{
+            const feedbackData = getFeedbackData();
+            let hiddenCount = 0;
+
+            document.querySelectorAll('.post-card').forEach(card => {{
+                const postIndex = card.querySelector('.thumbs-up')?.dataset.post;
+                const date = card.querySelector('.thumbs-up')?.dataset.date;
+                const key = date + '_' + postIndex;
+                const rating = feedbackData[key]?.rating;
+
+                if (rating === 'down') {{
+                    hiddenCount++;
+                }}
+            }});
+
+            const countEl = document.getElementById('hidden-count');
+            if (countEl) countEl.textContent = hiddenCount;
+        }}
+
+        // Initialize feedback UI on page load
+        document.addEventListener('DOMContentLoaded', function() {{
+            const feedbackData = getFeedbackData();
+            Object.keys(feedbackData).forEach(key => {{
+                const [date, postIndex] = key.split('_');
+                updateFeedbackUI(parseInt(postIndex), date);
+            }});
+            updateFeedbackStats();
+
+            // Hide disliked posts on load (filter is off by default)
+            toggleDislikedFilter();
+        }});
+
+        // Export feedback data (for analysis)
+        function exportFeedback() {{
+            const data = getFeedbackData();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {{type: 'application/json'}});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'kram_feedback_' + new Date().toISOString().split('T')[0] + '.json';
+            a.click();
         }}
     </script>
 </body>
