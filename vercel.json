@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "dashboard.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "login.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/login",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/",
+      "dest": "/dashboard.html"
+    }
+  ],
+  "env": {
+    "X_CLIENT_ID": "@x_client_id",
+    "X_CLIENT_SECRET": "@x_client_secret",
+    "ENCRYPTION_KEY": "@encryption_key",
+    "APP_URL": "@app_url"
+  }
+}

@@ -329,6 +329,197 @@ def generate_html(content, target_date):
             color: var(--text-secondary);
         }}
 
+        /* User Profile */
+        .user-profile {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+
+        .user-profile:hover {{
+            border-color: var(--accent);
+        }}
+
+        .user-profile img {{
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }}
+
+        .user-profile .username {{
+            font-size: 13px;
+            color: var(--text-primary);
+        }}
+
+        .login-btn {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }}
+
+        .login-btn:hover {{
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }}
+
+        .login-btn svg {{
+            width: 16px;
+            height: 16px;
+        }}
+
+        .user-dropdown {{
+            position: relative;
+        }}
+
+        .dropdown-menu {{
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            min-width: 180px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }}
+
+        .dropdown-menu.show {{
+            display: block;
+        }}
+
+        .dropdown-item {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+        }}
+
+        .dropdown-item:hover {{
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }}
+
+        .dropdown-item svg {{
+            width: 16px;
+            height: 16px;
+        }}
+
+        .dropdown-divider {{
+            height: 1px;
+            background: var(--border);
+            margin: 4px 0;
+        }}
+
+        /* Analytics Section */
+        .analytics-section {{
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }}
+
+        .analytics-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }}
+
+        .analytics-title {{
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }}
+
+        .analytics-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }}
+
+        .analytics-stat {{
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }}
+
+        .analytics-stat-value {{
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent);
+        }}
+
+        .analytics-stat-label {{
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }}
+
+        .top-tweets {{
+            margin-top: 20px;
+        }}
+
+        .top-tweets-title {{
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }}
+
+        .tweet-item {{
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }}
+
+        .tweet-text {{
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }}
+
+        .tweet-metrics {{
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }}
+
+        .tweet-metric {{
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }}
+
+        @media (max-width: 768px) {{
+            .analytics-grid {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
+        }}
+
         /* Stats Grid */
         .stats-grid {{
             display: grid;
@@ -911,6 +1102,51 @@ def generate_html(content, target_date):
                         <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                 </div>
+
+                <!-- User Profile / Login -->
+                <div class="user-dropdown" id="userDropdown">
+                    <!-- Login Button (shown when not logged in) -->
+                    <a href="/login" class="login-btn" id="loginBtn">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Sign in
+                    </a>
+
+                    <!-- User Profile (shown when logged in) -->
+                    <div class="user-profile" id="userProfile" style="display: none;" onclick="toggleDropdown()">
+                        <img id="userAvatar" src="" alt="Profile">
+                        <span class="username" id="userName">@username</span>
+                    </div>
+
+                    <!-- Dropdown Menu -->
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="/api/analytics/profile" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            View Profile
+                        </a>
+                        <a href="#" class="dropdown-item" onclick="loadAnalytics()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 20V10"></path>
+                                <path d="M12 20V4"></path>
+                                <path d="M6 20v-6"></path>
+                            </svg>
+                            Refresh Analytics
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/api/auth/logout" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Logout
+                        </a>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -935,6 +1171,42 @@ def generate_html(content, target_date):
                 <div class="stat-label">Disliked</div>
                 <div class="stat-value"><span id="stat-disliked" style="color: #ff5252; font-size: 32px; margin: 0;">0</span></div>
                 <div class="stat-subtitle">Needs improvement</div>
+            </div>
+        </div>
+
+        <!-- Analytics Section (shown when logged in) -->
+        <div class="content-area" id="analyticsContainer" style="display: none;">
+            <div class="analytics-section">
+                <div class="analytics-header">
+                    <span class="analytics-title">Your X Analytics</span>
+                    <button class="btn btn-copy" onclick="loadAnalytics()" style="padding: 6px 12px; font-size: 12px;">Refresh</button>
+                </div>
+                <div class="analytics-grid">
+                    <div class="analytics-stat">
+                        <div class="analytics-stat-value" id="totalLikes">-</div>
+                        <div class="analytics-stat-label">Total Likes</div>
+                    </div>
+                    <div class="analytics-stat">
+                        <div class="analytics-stat-value" id="totalRetweets">-</div>
+                        <div class="analytics-stat-label">Total Retweets</div>
+                    </div>
+                    <div class="analytics-stat">
+                        <div class="analytics-stat-value" id="totalReplies">-</div>
+                        <div class="analytics-stat-label">Total Replies</div>
+                    </div>
+                    <div class="analytics-stat">
+                        <div class="analytics-stat-value" id="avgLikes">-</div>
+                        <div class="analytics-stat-label">Avg Likes/Post</div>
+                    </div>
+                </div>
+                <div class="top-tweets">
+                    <div class="top-tweets-title">Your Top Performing Tweets</div>
+                    <div id="topTweetsList">
+                        <div class="tweet-item" style="color: var(--text-secondary); text-align: center;">
+                            Click "Refresh" to load your analytics
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -964,6 +1236,107 @@ def generate_html(content, target_date):
     </div>
 
     <script>
+        // ===== AUTH & USER MANAGEMENT =====
+        function getCookie(name) {{
+            const value = `; ${{document.cookie}}`;
+            const parts = value.split(`; ${{name}}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }}
+
+        function checkAuthState() {{
+            const userCookie = getCookie('x_user');
+            const loginBtn = document.getElementById('loginBtn');
+            const userProfile = document.getElementById('userProfile');
+            const analyticsContainer = document.getElementById('analyticsContainer');
+
+            if (userCookie) {{
+                try {{
+                    const userData = JSON.parse(atob(userCookie));
+                    loginBtn.style.display = 'none';
+                    userProfile.style.display = 'flex';
+                    analyticsContainer.style.display = 'block';
+
+                    document.getElementById('userAvatar').src = userData.profile_image_url || '/api/placeholder/28/28';
+                    document.getElementById('userName').textContent = '@' + userData.username;
+
+                    // Auto-load analytics on login
+                    loadAnalytics();
+                }} catch (e) {{
+                    console.error('Error parsing user data:', e);
+                }}
+            }} else {{
+                loginBtn.style.display = 'flex';
+                userProfile.style.display = 'none';
+                analyticsContainer.style.display = 'none';
+            }}
+        }}
+
+        function toggleDropdown() {{
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        }}
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {{
+            const dropdown = document.getElementById('userDropdown');
+            if (!dropdown.contains(e.target)) {{
+                document.getElementById('dropdownMenu').classList.remove('show');
+            }}
+        }});
+
+        // ===== ANALYTICS =====
+        async function loadAnalytics() {{
+            const topTweetsList = document.getElementById('topTweetsList');
+            topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--text-secondary); text-align: center;">Loading analytics...</div>';
+
+            try {{
+                const response = await fetch('/api/analytics/tweets?max_results=50');
+
+                if (response.status === 401) {{
+                    topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--text-secondary); text-align: center;">Please sign in to view analytics</div>';
+                    return;
+                }}
+
+                if (!response.ok) {{
+                    throw new Error('Failed to load analytics');
+                }}
+
+                const data = await response.json();
+
+                // Update summary stats
+                document.getElementById('totalLikes').textContent = data.summary.total_likes.toLocaleString();
+                document.getElementById('totalRetweets').textContent = data.summary.total_retweets.toLocaleString();
+                document.getElementById('totalReplies').textContent = data.summary.total_replies.toLocaleString();
+                document.getElementById('avgLikes').textContent = data.summary.avg_likes.toFixed(1);
+
+                // Show top 5 tweets
+                const topTweets = data.tweets.slice(0, 5);
+                if (topTweets.length === 0) {{
+                    topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--text-secondary); text-align: center;">No tweets found</div>';
+                    return;
+                }}
+
+                topTweetsList.innerHTML = topTweets.map(tweet => `
+                    <div class="tweet-item">
+                        <div class="tweet-text">${{tweet.text.substring(0, 150)}}${{tweet.text.length > 150 ? '...' : ''}}</div>
+                        <div class="tweet-metrics">
+                            <span class="tweet-metric">&#10084; ${{tweet.metrics.like_count}}</span>
+                            <span class="tweet-metric">&#128257; ${{tweet.metrics.retweet_count}}</span>
+                            <span class="tweet-metric">&#128172; ${{tweet.metrics.reply_count}}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+            }} catch (error) {{
+                console.error('Analytics error:', error);
+                topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--error); text-align: center;">Failed to load analytics. Please try again.</div>';
+            }}
+        }}
+
+        // Initialize auth state on page load
+        document.addEventListener('DOMContentLoaded', checkAuthState);
+
+        // ===== SIDEBAR =====
         function toggleSidebar() {{
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('sidebarOverlay').classList.toggle('show');
