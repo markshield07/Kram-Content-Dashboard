@@ -41,15 +41,15 @@ def image_to_base64(image_path):
 
 
 def generate_html(content, target_date):
-    """Generate static HTML dashboard with embedded images."""
+    """Generate static HTML dashboard with AxeOS-inspired design."""
 
     date_display = datetime.strptime(target_date, "%Y-%m-%d").strftime("%A, %B %d, %Y")
 
     # Calculate stats
-    gm_count = sum(1 for p in content.get('posts', []) if p.get('post_type') == 'gm')
-    gn_count = sum(1 for p in content.get('posts', []) if p.get('post_type') == 'gn')
-    themed_count = sum(1 for p in content.get('posts', []) if p.get('post_type', '').startswith('themed'))
+    total_posts = content.get('post_count', 0)
     images_count = sum(1 for p in content.get('posts', []) if p.get('image_path'))
+    gm_count = sum(1 for p in content.get('posts', []) if p.get('post_type') == 'gm')
+    themed_count = sum(1 for p in content.get('posts', []) if p.get('post_type', '').startswith('themed'))
 
     # Generate post cards
     post_cards = ""
@@ -61,7 +61,6 @@ def generate_html(content, target_date):
         image_path = post.get('image_path')
 
         # Escape quotes for JavaScript
-        post_text_js = post_text.replace("'", "\\'").replace('"', '\\"')
         image_prompt_js = image_prompt.replace("'", "\\'").replace('"', '\\"')
 
         # Generate image section
@@ -90,25 +89,40 @@ def generate_html(content, target_date):
         # Get image data URL for X posting
         image_data_url = image_to_base64(image_path) if image_path else ''
 
+        # Post type badge color
+        type_colors = {
+            'gm': '#f7931a',
+            'gn': '#5856d6',
+            'themed_monday': '#34c759',
+            'themed_tuesday': '#ff6b6b',
+            'holiday': '#f44336'
+        }
+        badge_color = type_colors.get(post_type, '#f7931a')
+
         post_cards += f'''
-        <div class="post-card" data-post-index="{i}">
+        <div class="post-card">
             <div class="post-header">
-                <span class="post-type {post_type}">{post_type.replace('_', ' ').upper()}</span>
-                <span class="post-time">{suggested_time}</span>
+                <span class="post-type" style="background: {badge_color};">{post_type.replace('_', ' ').upper()}</span>
+                <span class="post-time">{suggested_time.upper()}</span>
             </div>
             {image_section}
             <div class="post-text-container">
                 <div class="post-text" id="post-text-{i}">{post_text}</div>
-                <button class="btn-edit" onclick="editPost({i})" title="Edit post">&#9998;</button>
+                <button class="btn-edit" onclick="editPost({i})" title="Edit post">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
             </div>
             <div class="prompt-section">
-                <div class="prompt-label">Image Prompt</div>
+                <div class="prompt-label">IMAGE PROMPT</div>
                 <div class="prompt-text">{image_prompt}</div>
             </div>
             <div class="post-actions">
-                <button class="btn btn-copy-post" onclick="copyText(this, document.getElementById('post-text-{i}').innerText)">Copy Post</button>
-                <button class="btn btn-copy-prompt" onclick="copyText(this, '{image_prompt_js}')">Copy Prompt</button>
-                <button class="btn btn-post-x" onclick="postToX({i}, '{image_data_url}')">Post to X</button>
+                <button class="btn btn-primary" onclick="copyText(this, document.getElementById('post-text-{i}').innerText)">Copy Post</button>
+                <button class="btn btn-secondary" onclick="copyText(this, '{image_prompt_js}')">Copy Prompt</button>
+                <button class="btn btn-dark" onclick="postToX({i}, '{image_data_url}')">Post to X</button>
             </div>
         </div>
         '''
@@ -118,7 +132,7 @@ def generate_html(content, target_date):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KRAM Content Dashboard - {date_display}</title>
+    <title>KRAM Content Dashboard</title>
     <style>
         * {{
             margin: 0;
@@ -126,89 +140,261 @@ def generate_html(content, target_date):
             box-sizing: border-box;
         }}
 
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            color: #e0e0e0;
+        :root {{
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #141414;
+            --bg-card: #1a1a1a;
+            --bg-elevated: #222222;
+            --accent: #f7931a;
+            --accent-hover: #ffa940;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --text-muted: #555555;
+            --border: #2a2a2a;
+            --success: #00d084;
+            --sidebar-width: 220px;
         }}
 
-        .header {{
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            padding: 20px 40px;
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            display: flex;
+        }}
+
+        /* Sidebar */
+        .sidebar {{
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }}
+
+        .sidebar-logo {{
+            padding: 0 20px 30px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }}
+
+        .sidebar-logo h1 {{
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }}
+
+        .sidebar-logo span {{
+            color: var(--accent);
+        }}
+
+        .sidebar-logo .subtitle {{
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }}
+
+        .nav-section {{
+            margin-bottom: 25px;
+        }}
+
+        .nav-section-title {{
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 20px;
+            margin-bottom: 10px;
+        }}
+
+        .nav-item {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }}
+
+        .nav-item:hover {{
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }}
+
+        .nav-item.active {{
+            background: var(--bg-card);
+            color: var(--accent);
+            border-left-color: var(--accent);
+        }}
+
+        .nav-item svg {{
+            width: 18px;
+            height: 18px;
+            opacity: 0.7;
+        }}
+
+        .nav-item.active svg {{
+            opacity: 1;
+        }}
+
+        /* Main Content */
+        .main-content {{
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            min-height: 100vh;
+        }}
+
+        /* Top Header */
+        .top-header {{
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }}
 
-        .logo {{
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffd700;
+        .header-left {{
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }}
 
-        .logo span {{
-            color: #00ff88;
+        .menu-toggle {{
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 5px;
         }}
 
         .current-date {{
-            font-size: 18px;
-            color: #ffd700;
+            font-size: 14px;
+            color: var(--text-secondary);
         }}
 
-        .container {{
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px;
+        .header-right {{
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }}
 
-        .stats {{
+        .header-icon {{
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+
+        .header-icon:hover {{
+            border-color: var(--accent);
+        }}
+
+        .header-icon svg {{
+            width: 18px;
+            height: 18px;
+            color: var(--text-secondary);
+        }}
+
+        /* Stats Grid */
+        .stats-grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
-            margin-bottom: 30px;
+            padding: 25px 30px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
         }}
 
         .stat-card {{
-            background: rgba(255,255,255,0.05);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
+        }}
+
+        .stat-label {{
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
         }}
 
         .stat-value {{
             font-size: 32px;
-            font-weight: bold;
-            color: #00ff88;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
         }}
 
-        .stat-label {{
+        .stat-value span {{
             font-size: 14px;
-            color: #888;
-            margin-top: 5px;
+            color: var(--accent);
+            font-weight: 400;
+            margin-left: 8px;
         }}
 
+        .stat-subtitle {{
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }}
+
+        /* Content Area */
+        .content-area {{
+            padding: 30px;
+        }}
+
+        .section-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }}
+
+        .section-title {{
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }}
+
+        /* Posts Grid */
         .posts-grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
             gap: 25px;
         }}
 
         .post-card {{
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
         }}
 
         .post-card:hover {{
-            transform: translateY(-5px);
-            border-color: rgba(255,215,0,0.3);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(247, 147, 26, 0.1);
         }}
 
         .post-header {{
@@ -219,37 +405,26 @@ def generate_html(content, target_date):
         }}
 
         .post-type {{
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #000;
         }}
 
-        .post-type.gm {{ background: #ff9500; color: #000; }}
-        .post-type.gn {{ background: #5856d6; color: #fff; }}
-        .post-type.themed_monday {{ background: #34c759; color: #000; }}
-        .post-type.themed_tuesday {{ background: #ff6b6b; color: #fff; }}
-        .post-type.themed_wednesday {{ background: #00bcd4; color: #000; }}
-        .post-type.themed_thursday {{ background: #9c27b0; color: #fff; }}
-        .post-type.themed_friday {{ background: #ffeb3b; color: #000; }}
-        .post-type.themed_saturday {{ background: #4caf50; color: #fff; }}
-        .post-type.themed_sunday {{ background: #ff5722; color: #fff; }}
-        .post-type.engagement {{ background: #e91e63; color: #fff; }}
-        .post-type.community {{ background: #2196f3; color: #fff; }}
-        .post-type.holiday {{ background: #f44336; color: #fff; }}
-        .post-type.gm_extra {{ background: #ff9500; color: #000; }}
-
         .post-time {{
-            color: #888;
-            font-size: 12px;
-            text-transform: uppercase;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
         }}
 
         .image-section {{
             margin-bottom: 15px;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
+            background: var(--bg-elevated);
         }}
 
         .post-image {{
@@ -257,7 +432,7 @@ def generate_html(content, target_date):
             height: auto;
             display: block;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.3s ease;
         }}
 
         .post-image:hover {{
@@ -265,48 +440,87 @@ def generate_html(content, target_date):
         }}
 
         .image-pending, .image-missing {{
-            background: rgba(0,0,0,0.3);
-            border: 2px dashed rgba(255,255,255,0.2);
-            border-radius: 12px;
+            background: var(--bg-elevated);
+            border: 1px dashed var(--border);
+            border-radius: 8px;
             padding: 40px;
             text-align: center;
         }}
 
         .no-image {{
-            color: #666;
-            font-size: 14px;
+            color: var(--text-muted);
+            font-size: 13px;
         }}
 
         .no-image small {{
-            color: #888;
+            color: var(--text-muted);
             font-family: monospace;
+            font-size: 11px;
         }}
 
         .btn-download {{
             width: 100%;
             margin-top: 10px;
-            background: #00ff88;
-            color: #000;
+        }}
+
+        .post-text-container {{
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 15px;
+        }}
+
+        .post-text {{
+            flex: 1;
+            font-size: 20px;
+            line-height: 1.4;
+            color: var(--text-primary);
+        }}
+
+        .post-text[contenteditable="true"] {{
+            background: var(--bg-elevated);
+            padding: 12px;
+            border-radius: 8px;
+            outline: 2px solid var(--accent);
+        }}
+
+        .btn-edit {{
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }}
+
+        .btn-edit:hover {{
+            background: var(--bg-elevated);
+            color: var(--accent);
+        }}
+
+        .btn-edit.editing {{
+            color: var(--success);
         }}
 
         .prompt-section {{
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
         }}
 
         .prompt-label {{
-            font-size: 11px;
-            color: #ffd700;
-            margin-bottom: 8px;
-            text-transform: uppercase;
+            font-size: 10px;
+            color: var(--accent);
             letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
         }}
 
         .prompt-text {{
-            font-size: 13px;
-            color: #aaa;
+            font-size: 12px;
+            color: var(--text-secondary);
             line-height: 1.5;
         }}
 
@@ -317,108 +531,55 @@ def generate_html(content, target_date):
 
         .btn {{
             flex: 1;
-            padding: 10px;
+            padding: 10px 15px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
 
-        .btn-copy-post {{
-            background: #ffd700;
+        .btn-primary {{
+            background: var(--accent);
             color: #000;
         }}
 
-        .btn-copy-prompt {{
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.2);
+        .btn-primary:hover {{
+            background: var(--accent-hover);
         }}
 
-        .btn-post-x {{
+        .btn-secondary {{
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }}
+
+        .btn-secondary:hover {{
+            border-color: var(--text-muted);
+            color: var(--text-primary);
+        }}
+
+        .btn-dark {{
             background: #000;
-            color: #fff;
-            border: 1px solid #fff;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
         }}
 
-        .btn-post-x:hover {{
-            background: #1da1f2;
-            border-color: #1da1f2;
-        }}
-
-        .post-text-container {{
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 20px;
-        }}
-
-        .post-text {{
-            flex: 1;
-            font-size: 24px;
-            line-height: 1.4;
-            color: #fff;
-            margin-bottom: 0;
-        }}
-
-        .post-text[contenteditable="true"] {{
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 8px;
-            outline: 2px solid #ffd700;
-        }}
-
-        .btn-edit {{
-            background: transparent;
-            border: none;
-            color: #888;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.2s;
-        }}
-
-        .btn-edit:hover {{
-            color: #ffd700;
-        }}
-
-        .btn-edit.editing {{
-            color: #00ff88;
-        }}
-
-        .btn:hover {{
-            opacity: 0.8;
-            transform: scale(1.02);
+        .btn-dark:hover {{
+            border-color: var(--accent);
+            color: var(--accent);
         }}
 
         .btn.copied, .btn.posted {{
-            background: #00ff88 !important;
+            background: var(--success) !important;
             color: #000 !important;
+            border-color: var(--success) !important;
         }}
 
-        .instructions {{
-            background: rgba(255,215,0,0.1);
-            border: 1px solid rgba(255,215,0,0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }}
-
-        .instructions h3 {{
-            color: #ffd700;
-            margin-bottom: 10px;
-        }}
-
-        .instructions code {{
-            background: rgba(0,0,0,0.3);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-        }}
-
-        /* Image Modal */
+        /* Modal */
         .modal {{
             display: none;
             position: fixed;
@@ -427,7 +588,7 @@ def generate_html(content, target_date):
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.9);
+            background-color: rgba(0,0,0,0.95);
             cursor: pointer;
         }}
 
@@ -440,6 +601,7 @@ def generate_html(content, target_date):
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            border-radius: 8px;
         }}
 
         .modal-close {{
@@ -447,60 +609,203 @@ def generate_html(content, target_date):
             top: 20px;
             right: 30px;
             color: #fff;
-            font-size: 40px;
+            font-size: 32px;
             cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }}
+
+        .modal-close:hover {{
+            opacity: 1;
+        }}
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {{
+            .stats-grid {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
         }}
 
         @media (max-width: 768px) {{
+            .sidebar {{
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 200;
+            }}
+
+            .sidebar.open {{
+                transform: translateX(0);
+            }}
+
+            .main-content {{
+                margin-left: 0;
+            }}
+
+            .menu-toggle {{
+                display: block;
+            }}
+
+            .stats-grid {{
+                grid-template-columns: 1fr 1fr;
+                padding: 15px;
+                gap: 10px;
+            }}
+
+            .stat-card {{
+                padding: 15px;
+            }}
+
+            .stat-value {{
+                font-size: 24px;
+            }}
+
             .posts-grid {{
                 grid-template-columns: 1fr;
             }}
-            .header {{
-                flex-direction: column;
-                gap: 20px;
+
+            .content-area {{
+                padding: 15px;
             }}
+
+            .top-header {{
+                padding: 15px;
+            }}
+        }}
+
+        /* Overlay for mobile menu */
+        .sidebar-overlay {{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+        }}
+
+        .sidebar-overlay.show {{
+            display: block;
         }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">KRAM <span>Content Creator</span></div>
-        <div class="current-date">{date_display}</div>
-    </div>
-
-    <div class="container">
-        <div class="instructions">
-            <h3>Daily Content Ready</h3>
-            <p><strong>{images_count}/{content.get('post_count', 0)}</strong> images generated. Click any image to view full size. Use the buttons to copy text or download images.</p>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <h1>KRAM<span>.</span></h1>
+            <div class="subtitle">Content Creator</div>
         </div>
 
-        <div class="stats">
+        <div class="nav-section">
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                History
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Schedule
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Settings</div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                Settings
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                Notifications
+            </div>
+        </div>
+    </nav>
+
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <span class="current-date">{date_display}</span>
+            </div>
+            <div class="header-right">
+                <div class="header-icon" onclick="location.reload()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value">{content.get('post_count', 0)}</div>
                 <div class="stat-label">Total Posts</div>
+                <div class="stat-value">{total_posts}<span>today</span></div>
+                <div class="stat-subtitle">Content generated</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">{images_count}</div>
                 <div class="stat-label">Images</div>
+                <div class="stat-value">{images_count}<span>ready</span></div>
+                <div class="stat-subtitle">Generated with AI</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">{gm_count}</div>
                 <div class="stat-label">GM Posts</div>
+                <div class="stat-value">{gm_count}</div>
+                <div class="stat-subtitle">Morning content</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value">{gn_count}</div>
-                <div class="stat-label">GN Posts</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{themed_count}</div>
                 <div class="stat-label">Themed</div>
+                <div class="stat-value">{themed_count}</div>
+                <div class="stat-subtitle">Special posts</div>
             </div>
         </div>
 
-        <div class="posts-grid">
-            {post_cards}
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="section-header">
+                <h2 class="section-title">Today's Content</h2>
+            </div>
+
+            <div class="posts-grid">
+                {post_cards}
+            </div>
         </div>
-    </div>
+    </main>
 
     <!-- Image Modal -->
     <div id="imageModal" class="modal" onclick="closeModal()">
@@ -509,10 +814,15 @@ def generate_html(content, target_date):
     </div>
 
     <script>
+        function toggleSidebar() {{
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }}
+
         function copyText(btn, text) {{
             navigator.clipboard.writeText(text).then(() => {{
                 const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
+                btn.textContent = 'COPIED!';
                 btn.classList.add('copied');
                 setTimeout(() => {{
                     btn.textContent = originalText;
@@ -528,7 +838,7 @@ def generate_html(content, target_date):
             link.click();
 
             const originalText = btn.textContent;
-            btn.textContent = 'Downloaded!';
+            btn.textContent = 'DOWNLOADED!';
             btn.classList.add('copied');
             setTimeout(() => {{
                 btn.textContent = originalText;
@@ -545,29 +855,22 @@ def generate_html(content, target_date):
             document.getElementById('imageModal').style.display = 'none';
         }}
 
-        // Close modal with Escape key
         document.addEventListener('keydown', function(e) {{
             if (e.key === 'Escape') closeModal();
         }});
 
-        // Edit post text
         function editPost(index) {{
             const textEl = document.getElementById('post-text-' + index);
             const btnEl = textEl.parentElement.querySelector('.btn-edit');
 
             if (textEl.contentEditable === 'true') {{
-                // Save - exit edit mode
                 textEl.contentEditable = 'false';
                 btnEl.classList.remove('editing');
-                btnEl.innerHTML = '&#9998;';
             }} else {{
-                // Enter edit mode
                 textEl.contentEditable = 'true';
                 textEl.focus();
                 btnEl.classList.add('editing');
-                btnEl.innerHTML = '&#10003;';
 
-                // Select all text
                 const range = document.createRange();
                 range.selectNodeContents(textEl);
                 const sel = window.getSelection();
@@ -576,22 +879,16 @@ def generate_html(content, target_date):
             }}
         }}
 
-        // Post to X (Twitter)
         function postToX(index, imageDataUrl) {{
             const textEl = document.getElementById('post-text-' + index);
             const postText = textEl.innerText;
 
-            // For now, open X with pre-filled text (image upload requires API)
-            // The image will need to be downloaded and attached manually, or use the API
             const tweetUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(postText);
-
-            // Open in new window
             window.open(tweetUrl, '_blank', 'width=550,height=420');
 
-            // Show feedback
             const btn = event.target;
             const originalText = btn.textContent;
-            btn.textContent = 'Opened!';
+            btn.textContent = 'OPENED!';
             btn.classList.add('posted');
             setTimeout(() => {{
                 btn.textContent = originalText;
