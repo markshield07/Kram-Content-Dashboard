@@ -837,7 +837,7 @@ def generate_html(content, target_date):
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <h1>KRAM<span>.</span></h1>
-            <div class="subtitle">Content Creator</div>
+            <div class="subtitle">Content Generator</div>
         </div>
 
         <div class="nav-section">
