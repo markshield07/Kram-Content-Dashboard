@@ -1,31 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/**/*.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "dashboard.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "login.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/login",
-      "dest": "/login.html"
-    },
-    {
-      "src": "/",
-      "dest": "/dashboard.html"
-    }
+  "rewrites": [
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/", "destination": "/dashboard.html" }
   ]
 }
