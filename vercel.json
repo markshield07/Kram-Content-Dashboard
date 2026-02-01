@@ -27,11 +27,5 @@
       "src": "/",
       "dest": "/dashboard.html"
     }
-  ],
-  "env": {
-    "X_CLIENT_ID": "@x_client_id",
-    "X_CLIENT_SECRET": "@x_client_secret",
-    "ENCRYPTION_KEY": "@encryption_key",
-    "APP_URL": "@app_url"
-  }
+  ]
 }
