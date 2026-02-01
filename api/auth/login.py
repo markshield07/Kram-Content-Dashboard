@@ -1,22 +1,16 @@
-"""
-X OAuth 2.0 Login Endpoint - Initiates PKCE flow
-"""
+from http.server import BaseHTTPRequestHandler
 import os
 import base64
 import hashlib
 import secrets
-from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlencode
-import json
 
 
 def generate_pkce():
     """Generate PKCE code verifier and challenge."""
-    # Generate code verifier (43-128 characters)
     code_verifier = base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('utf-8')
     code_verifier = code_verifier.replace('=', '')[:128]
 
-    # Generate code challenge (SHA256 hash of verifier)
     code_challenge = hashlib.sha256(code_verifier.encode('utf-8')).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge).decode('utf-8').rstrip('=')
 
@@ -25,16 +19,15 @@ def generate_pkce():
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Get environment variables
         client_id = os.environ.get('X_CLIENT_ID')
-        app_url = os.environ.get('APP_URL', 'http://localhost:3000')
+        app_url = os.environ.get('APP_URL', 'https://kram-content-dashboard.vercel.app')
         redirect_uri = f"{app_url}/api/auth/callback"
 
         if not client_id:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'error': 'X_CLIENT_ID not configured'}).encode())
+            self.wfile.write(b'{"error": "X_CLIENT_ID not configured"}')
             return
 
         # Generate PKCE parameters
@@ -56,12 +49,9 @@ class handler(BaseHTTPRequestHandler):
 
         auth_url = f"https://twitter.com/i/oauth2/authorize?{urlencode(auth_params)}"
 
-        # Set cookies to store PKCE verifier and state (httponly for security)
+        # Redirect with cookies
         self.send_response(302)
         self.send_header('Location', auth_url)
-
-        # Store code_verifier in cookie (will be needed for token exchange)
         self.send_header('Set-Cookie', f'pkce_verifier={code_verifier}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600')
         self.send_header('Set-Cookie', f'oauth_state={state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600')
-
         self.end_headers()
