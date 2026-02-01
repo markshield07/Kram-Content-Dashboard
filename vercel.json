@@ -8,6 +8,8 @@
     { "source": "/login", "destination": "/login.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/analytics", "destination": "/analytics.html" },
+    { "source": "/generate", "destination": "/generate.html" },
+    { "source": "/images", "destination": "/images.html" },
     { "source": "/", "destination": "/index.html" }
   ]
 }

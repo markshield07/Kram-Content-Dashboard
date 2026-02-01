@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Content - ContentAI</title>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #f7931a;
+            --accent-hover: #ffa726;
+            --border: #2a2a2a;
+            --success: #34c759;
+            --error: #ff3b30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .sidebar-logo h1 span {
+            color: var(--accent);
+        }
+
+        .nav-section {
+            padding: 0 12px;
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 0 8px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(247, 147, 26, 0.1);
+            color: var(--accent);
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Content Layout */
+        .content-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message-avatar.ai {
+            background: linear-gradient(135deg, var(--accent) 0%, #ff6b6b 100%);
+        }
+
+        .message-avatar svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .message-avatar.ai svg {
+            color: #000;
+        }
+
+        .message-content {
+            max-width: 70%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 14px 18px;
+        }
+
+        .message.user .message-content {
+            background: rgba(247, 147, 26, 0.1);
+            border-color: rgba(247, 147, 26, 0.3);
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Generated Content Cards */
+        .generated-posts {
+            margin-top: 16px;
+        }
+
+        .generated-post {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .generated-post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .generated-post-platform {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .generated-post-platform svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .generated-post-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .post-action-btn {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .post-action-btn:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .post-action-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+        }
+
+        .generated-post-text {
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .generated-post-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Chat Input */
+        .chat-input-area {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            min-height: 50px;
+            max-height: 150px;
+            font-family: inherit;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .send-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            color: #000;
+        }
+
+        /* Quick Actions Panel */
+        .quick-actions {
+            width: 320px;
+            background: var(--bg-secondary);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .quick-actions h3 {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-action-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        .quick-action-btn:hover {
+            border-color: var(--accent);
+            background: rgba(247, 147, 26, 0.05);
+        }
+
+        .quick-action-btn .icon {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .quick-action-btn .desc {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Platform Selector */
+        .platform-selector {
+            margin-bottom: 24px;
+        }
+
+        .platform-selector label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .platform-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .platform-option {
+            padding: 8px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .platform-option:hover {
+            border-color: var(--accent);
+        }
+
+        .platform-option.selected {
+            background: rgba(247, 147, 26, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .platform-option svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Tone Selector */
+        .tone-selector {
+            margin-bottom: 24px;
+        }
+
+        .tone-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tone-option {
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tone-option:hover {
+            border-color: var(--accent);
+        }
+
+        .tone-option.selected {
+            background: rgba(247, 147, 26, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .quick-actions {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <h1>Content<span>AI</span></h1>
+        </div>
+
+        <div class="nav-section">
+            <a href="/dashboard" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/analytics" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 20V10"></path>
+                    <path d="M12 20V4"></path>
+                    <path d="M6 20v-6"></path>
+                </svg>
+                Analytics
+            </a>
+            <a href="/generate" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                    <path d="M20 12a8 8 0 0 0-8-8v8h8z"></path>
+                </svg>
+                Generate Content
+            </a>
+            <a href="/images" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                Image Generator
+            </a>
+            <a href="/calendar" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Calendar
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Tools</div>
+            <a href="/ab-testing" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <polyline points="17 11 19 13 23 9"></polyline>
+                </svg>
+                A/B Testing
+            </a>
+            <a href="/trends" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                Trends
+            </a>
+            <a href="/competitors" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Competitors
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Account</div>
+            <a href="/settings" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                Settings
+            </a>
+            <a href="/api/logout" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">Generate Content</h1>
+        </header>
+
+        <div class="content-layout">
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- AI Welcome Message -->
+                    <div class="message">
+                        <div class="message-avatar ai">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-text">
+                                Hey! I'm your AI content assistant. I can help you create engaging posts for any social platform.
+
+Tell me what you want to create, or try one of the quick actions on the right. I'll generate content that matches your voice and style based on your top-performing posts.
+
+What would you like to create today?
+                            </div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            class="chat-input"
+                            id="chatInput"
+                            placeholder="Describe the content you want to create..."
+                            rows="1"
+                            onkeydown="handleKeyDown(event)"
+                        ></textarea>
+                        <button class="send-btn" onclick="sendMessage()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="quick-actions">
+                <div class="platform-selector">
+                    <label>Platform</label>
+                    <div class="platform-options">
+                        <div class="platform-option selected" onclick="selectPlatform(this, 'x')">
+                            <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            X
+                        </div>
+                        <div class="platform-option" onclick="selectPlatform(this, 'instagram')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073z"/></svg>
+                            IG
+                        </div>
+                        <div class="platform-option" onclick="selectPlatform(this, 'facebook')">
+                            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            FB
+                        </div>
+                        <div class="platform-option" onclick="selectPlatform(this, 'linkedin')">
+                            <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                            LI
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tone-selector">
+                    <label>Tone</label>
+                    <div class="tone-options">
+                        <div class="tone-option selected" onclick="selectTone(this, 'casual')">Casual</div>
+                        <div class="tone-option" onclick="selectTone(this, 'professional')">Professional</div>
+                        <div class="tone-option" onclick="selectTone(this, 'humorous')">Humorous</div>
+                        <div class="tone-option" onclick="selectTone(this, 'inspiring')">Inspiring</div>
+                        <div class="tone-option" onclick="selectTone(this, 'educational')">Educational</div>
+                    </div>
+                </div>
+
+                <h3>Quick Actions</h3>
+
+                <button class="quick-action-btn" onclick="quickAction('gm')">
+                    <span class="icon">&#9728;</span> GM Post
+                    <span class="desc">Generate a good morning post</span>
+                </button>
+
+                <button class="quick-action-btn" onclick="quickAction('engagement')">
+                    <span class="icon">&#128172;</span> Engagement Post
+                    <span class="desc">Create a post that sparks conversation</span>
+                </button>
+
+                <button class="quick-action-btn" onclick="quickAction('thread')">
+                    <span class="icon">&#128279;</span> Thread Starter
+                    <span class="desc">Generate an engaging thread</span>
+                </button>
+
+                <button class="quick-action-btn" onclick="quickAction('trending')">
+                    <span class="icon">&#128200;</span> Trending Topic
+                    <span class="desc">Create content around what's hot</span>
+                </button>
+
+                <button class="quick-action-btn" onclick="quickAction('promo')">
+                    <span class="icon">&#128227;</span> Promotional
+                    <span class="desc">Announce or promote something</span>
+                </button>
+
+                <button class="quick-action-btn" onclick="quickAction('story')">
+                    <span class="icon">&#128214;</span> Story Post
+                    <span class="desc">Share a personal story or experience</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let selectedPlatform = 'x';
+        let selectedTone = 'casual';
+        let isGenerating = false;
+
+        function selectPlatform(el, platform) {
+            document.querySelectorAll('.platform-option').forEach(p => p.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedPlatform = platform;
+        }
+
+        function selectTone(el, tone) {
+            document.querySelectorAll('.tone-option').forEach(t => t.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedTone = tone;
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function addMessage(text, isUser = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const messageHtml = `
+                <div class="message ${isUser ? 'user' : ''}">
+                    <div class="message-avatar ${isUser ? '' : 'ai'}">
+                        ${isUser ?
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' :
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>'
+                        }
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">${text}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+
+            messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function addGeneratedPosts(posts) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const platformIcons = {
+                'x': '<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+                'instagram': '<svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07..."/></svg>',
+                'facebook': '<svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12..."/></svg>',
+                'linkedin': '<svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569..."/></svg>'
+            };
+
+            const postsHtml = posts.map((post, i) => `
+                <div class="generated-post">
+                    <div class="generated-post-header">
+                        <div class="generated-post-platform">
+                            ${platformIcons[selectedPlatform] || platformIcons['x']}
+                            Option ${i + 1}
+                        </div>
+                        <div class="generated-post-actions">
+                            <button class="post-action-btn" onclick="copyPost('${post.replace(/'/g, "\\'")}')">Copy</button>
+                            <button class="post-action-btn" onclick="regeneratePost(${i})">Regenerate</button>
+                            <button class="post-action-btn primary" onclick="schedulePost('${post.replace(/'/g, "\\'")}')">Schedule</button>
+                        </div>
+                    </div>
+                    <div class="generated-post-text">${post}</div>
+                    <div class="generated-post-meta">
+                        <span>${post.length} characters</span>
+                        <span>Tone: ${selectedTone}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const messageHtml = `
+                <div class="message">
+                    <div class="message-avatar ai">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">Here are some options for you:</div>
+                        <div class="generated-posts">${postsHtml}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                </div>
+            `;
+
+            messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function copyPost(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+
+        function schedulePost(text) {
+            alert('Opening scheduler... (Coming soon!)');
+            // TODO: Open calendar/scheduler modal
+        }
+
+        function regeneratePost(index) {
+            addMessage('Regenerating option ' + (index + 1) + '...', false);
+            // TODO: Call API to regenerate specific post
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+
+            if (!text || isGenerating) return;
+
+            addMessage(text, true);
+            input.value = '';
+
+            isGenerating = true;
+            addMessage('Generating content for ' + selectedPlatform.toUpperCase() + ' with a ' + selectedTone + ' tone...');
+
+            // Simulate AI response (replace with actual API call)
+            setTimeout(() => {
+                const samplePosts = generateSamplePosts(text);
+                addGeneratedPosts(samplePosts);
+                isGenerating = false;
+            }, 1500);
+        }
+
+        function quickAction(type) {
+            const prompts = {
+                'gm': 'Create a good morning post that feels authentic and engaging',
+                'engagement': 'Create a post that asks a question or sparks conversation with my audience',
+                'thread': 'Create a thread starter about an interesting topic in my niche',
+                'trending': 'Create a post related to current trending topics',
+                'promo': 'Create a promotional post that doesn\'t feel too salesy',
+                'story': 'Help me share a personal story or experience'
+            };
+
+            document.getElementById('chatInput').value = prompts[type];
+            sendMessage();
+        }
+
+        function generateSamplePosts(prompt) {
+            // Sample posts - replace with actual AI generation
+            const samples = {
+                'x': [
+                    'GM fam! ☀️\n\nAnother day, another chance to build something great.\n\nWhat\'s everyone working on today?',
+                    'Good morning! ☕️\n\nReminder: Your only competition is who you were yesterday.\n\nLet\'s make today count 💪',
+                    'GM! Rise and grind 🌅\n\nThe best time to start was yesterday.\nThe second best time is NOW.\n\nWhat\'s your focus today?'
+                ],
+                'instagram': [
+                    'Good morning, beautiful people! ☀️\n\nStarting this day with gratitude and good vibes.\n\nDouble tap if you\'re ready to crush it today! 💪\n\n#GoodMorning #Motivation #DailyInspiration',
+                    'Rise & shine! 🌅\n\nEvery morning is a fresh start. A new chapter. A chance to rewrite your story.\n\nWhat chapter are you writing today?\n\n#MorningMotivation #NewDay #Mindset'
+                ],
+                'default': [
+                    'Here\'s a post idea based on your request:\n\n"' + prompt.substring(0, 50) + '..."\n\nWould you like me to adjust the tone or try a different angle?'
+                ]
+            };
+
+            return samples[selectedPlatform] || samples['default'];
+        }
+    </script>
+</body>
+</html>
