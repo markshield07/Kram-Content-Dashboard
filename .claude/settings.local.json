@@ -13,7 +13,14 @@
       "Bash(git config:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(dir \"C:\\\\Users\\\\marks\\\\X Content Creator\\\\assets\" /s /b)",
+      "Bash(ls -la \"C:\\\\Users\\\\marks\\\\X Content Creator\\\\assets\"\" 2>/dev/null || dir \"C:UsersmarksX Content Creatorassets\"\")",
+      "Bash(dir \"C:\\\\Users\\\\marks\\\\X Content Creator\" /b)",
+      "Bash(dir \"C:\\\\Users\\\\marks\\\\Downloads\")",
+      "WebFetch(domain:docs.x.com)",
+      "WebFetch(domain:developer.x.com)",
+      "WebFetch(domain:kram-content-dashboard.vercel.app)"
     ]
   }
 }

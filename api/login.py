@@ -21,7 +21,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         client_id = os.environ.get('X_CLIENT_ID')
         app_url = os.environ.get('APP_URL', 'https://kram-content-dashboard.vercel.app')
-        redirect_uri = f"{app_url}/api/auth/callback"
+        redirect_uri = f"{app_url}/api/callback"
 
         if not client_id:
             self.send_response(500)

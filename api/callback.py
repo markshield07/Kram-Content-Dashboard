@@ -75,7 +75,7 @@ class handler(BaseHTTPRequestHandler):
         # Exchange code for tokens
         client_id = os.environ.get('X_CLIENT_ID')
         client_secret = os.environ.get('X_CLIENT_SECRET')
-        redirect_uri = f"{app_url}/api/auth/callback"
+        redirect_uri = f"{app_url}/api/callback"
 
         token_url = "https://api.twitter.com/2/oauth2/token"
 

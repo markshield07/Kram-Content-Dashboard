@@ -1121,7 +1121,7 @@ def generate_html(content, target_date):
 
                     <!-- Dropdown Menu -->
                     <div class="dropdown-menu" id="dropdownMenu">
-                        <a href="/api/analytics/profile" class="dropdown-item">
+                        <a href="/api/profile" class="dropdown-item">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
@@ -1137,7 +1137,7 @@ def generate_html(content, target_date):
                             Refresh Analytics
                         </a>
                         <div class="dropdown-divider"></div>
-                        <a href="/api/auth/logout" class="dropdown-item">
+                        <a href="/api/logout" class="dropdown-item">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                 <polyline points="16 17 21 12 16 7"></polyline>
@@ -1290,7 +1290,7 @@ def generate_html(content, target_date):
             topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--text-secondary); text-align: center;">Loading analytics...</div>';
 
             try {{
-                const response = await fetch('/api/analytics/tweets?max_results=50');
+                const response = await fetch('/api/tweets?max_results=50');
 
                 if (response.status === 401) {{
                     topTweetsList.innerHTML = '<div class="tweet-item" style="color: var(--text-secondary); text-align: center;">Please sign in to view analytics</div>';
