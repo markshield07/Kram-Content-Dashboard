@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - ContentAI</title>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #f7931a;
+            --accent-hover: #ffa726;
+            --border: #2a2a2a;
+            --success: #34c759;
+            --error: #ff3b30;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .sidebar-logo h1 { font-size: 24px; font-weight: 700; }
+        .sidebar-logo h1 span { color: var(--accent); }
+
+        .nav-section { padding: 0 12px; margin-bottom: 24px; }
+        .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); padding: 0 8px; margin-bottom: 8px; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            border-radius: 8px; color: var(--text-secondary); text-decoration: none;
+            transition: all 0.2s; font-size: 14px;
+        }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background: rgba(247, 147, 26, 0.1); color: var(--accent); }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        .main-content { flex: 1; margin-left: 250px; }
+
+        .top-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 30px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);
+        }
+        .page-title { font-size: 24px; font-weight: 600; }
+
+        .save-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 24px; background: var(--accent); border: none; border-radius: 8px;
+            color: #000; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .save-btn:hover { background: var(--accent-hover); }
+
+        .content-area { padding: 30px; max-width: 900px; }
+
+        .settings-section {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+        }
+
+        .section-title { font-size: 18px; font-weight: 600; }
+        .section-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group:last-child { margin-bottom: 0; }
+
+        .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; }
+        .form-helper { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%; padding: 12px 14px; background: var(--bg-secondary);
+            border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text-primary); font-size: 14px; font-family: inherit;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none; border-color: var(--accent);
+        }
+        .form-input::placeholder, .form-textarea::placeholder { color: var(--text-secondary); }
+
+        .form-textarea { min-height: 120px; resize: vertical; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* Toggle Switch */
+        .toggle-group {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+        }
+        .toggle-group:last-child { border-bottom: none; }
+
+        .toggle-info h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .toggle-info p { font-size: 12px; color: var(--text-secondary); }
+
+        .toggle-switch {
+            width: 48px; height: 26px; background: var(--bg-secondary);
+            border-radius: 13px; position: relative; cursor: pointer;
+            transition: all 0.2s; border: 1px solid var(--border);
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 18px; height: 18px; background: var(--text-secondary);
+            border-radius: 50%; transition: all 0.2s;
+        }
+        .toggle-switch.active { background: var(--accent); border-color: var(--accent); }
+        .toggle-switch.active::after { left: 25px; background: #000; }
+
+        /* Voice Traits */
+        .traits-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .trait-tag {
+            padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.2s;
+        }
+        .trait-tag:hover { border-color: var(--accent); }
+        .trait-tag.selected { background: rgba(247, 147, 26, 0.15); border-color: var(--accent); color: var(--accent); }
+
+        /* Sample Posts */
+        .sample-posts { display: flex; flex-direction: column; gap: 12px; }
+
+        .sample-post {
+            display: flex; gap: 12px; padding: 14px; background: var(--bg-secondary);
+            border-radius: 8px; align-items: flex-start;
+        }
+
+        .sample-post textarea {
+            flex: 1; background: transparent; border: none; color: var(--text-primary);
+            font-size: 13px; line-height: 1.5; resize: none; min-height: 60px;
+        }
+        .sample-post textarea:focus { outline: none; }
+
+        .sample-post .remove-btn {
+            width: 28px; height: 28px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text-secondary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sample-post .remove-btn:hover { border-color: var(--error); color: var(--error); }
+        .sample-post .remove-btn svg { width: 14px; height: 14px; }
+
+        .add-sample-btn {
+            padding: 12px; background: transparent; border: 2px dashed var(--border);
+            border-radius: 8px; color: var(--text-secondary); font-size: 13px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+        }
+        .add-sample-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .add-sample-btn svg { width: 16px; height: 16px; }
+
+        /* Tone Slider */
+        .tone-slider-container { margin-bottom: 20px; }
+
+        .tone-labels {
+            display: flex; justify-content: space-between; font-size: 12px;
+            color: var(--text-secondary); margin-bottom: 8px;
+        }
+
+        .tone-slider {
+            width: 100%; height: 8px; background: var(--bg-secondary);
+            border-radius: 4px; appearance: none; cursor: pointer;
+        }
+        .tone-slider::-webkit-slider-thumb {
+            appearance: none; width: 20px; height: 20px; background: var(--accent);
+            border-radius: 50%; cursor: pointer;
+        }
+
+        /* Connected Accounts */
+        .connected-accounts { display: flex; flex-direction: column; gap: 12px; }
+
+        .account-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px; background: var(--bg-secondary); border-radius: 8px;
+        }
+
+        .account-info { display: flex; align-items: center; gap: 14px; }
+
+        .account-icon {
+            width: 44px; height: 44px; border-radius: 10px; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .account-icon.x { background: #000; border: 1px solid var(--border); }
+        .account-icon.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+        .account-icon.tiktok { background: #000; border: 1px solid var(--border); }
+        .account-icon svg { width: 24px; height: 24px; }
+
+        .account-details h4 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .account-details p { font-size: 12px; color: var(--text-secondary); }
+        .account-details .connected { color: var(--success); }
+
+        .account-actions { display: flex; gap: 8px; }
+
+        .account-btn {
+            padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .account-btn.disconnect {
+            background: transparent; border: 1px solid var(--border); color: var(--text-secondary);
+        }
+        .account-btn.disconnect:hover { border-color: var(--error); color: var(--error); }
+        .account-btn.connect { background: var(--accent); border: none; color: #000; }
+        .account-btn.connect:hover { background: var(--accent-hover); }
+
+        /* Danger Zone */
+        .danger-zone { border-color: rgba(255, 59, 48, 0.3); }
+        .danger-zone .section-title { color: var(--error); }
+
+        .danger-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 0; border-bottom: 1px solid var(--border);
+        }
+        .danger-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .danger-info h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .danger-info p { font-size: 12px; color: var(--text-secondary); }
+
+        .danger-btn {
+            padding: 10px 20px; background: transparent; border: 1px solid var(--error);
+            border-radius: 6px; color: var(--error); font-size: 13px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .danger-btn:hover { background: var(--error); color: #fff; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-logo"><h1>Content<span>AI</span></h1></div>
+        <div class="nav-section">
+            <a href="/dashboard" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+            <a href="/analytics" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>Analytics</a>
+            <a href="/generate" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>Generate Content</a>
+            <a href="/images" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Image Generator</a>
+            <a href="/calendar" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Calendar</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Tools</div>
+            <a href="/ab-testing" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>A/B Testing</a>
+            <a href="/trends" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Trends</a>
+            <a href="/competitors" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Competitors</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Account</div>
+            <a href="/settings" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
+            <a href="/api/logout" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-header">
+            <h1 class="page-title">Settings</h1>
+            <button class="save-btn" onclick="saveSettings()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Save Changes
+            </button>
+        </header>
+
+        <div class="content-area">
+            <!-- Brand Voice Profile -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Brand Voice Profile</h2>
+                        <p class="section-desc">Define your unique writing style so AI-generated content matches your voice</p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Brand Name</label>
+                    <input type="text" class="form-input" placeholder="Your brand or personal name" value="ContentAI">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Brand Description</label>
+                    <textarea class="form-textarea" placeholder="Describe your brand, what you do, and who you serve...">We help creators and businesses grow their social media presence with AI-powered content generation. Our focus is on authentic, engaging content that converts.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Voice Traits (Select all that apply)</label>
+                    <div class="traits-grid">
+                        <span class="trait-tag selected" onclick="toggleTrait(this)">Professional</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Casual</span>
+                        <span class="trait-tag selected" onclick="toggleTrait(this)">Friendly</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Formal</span>
+                        <span class="trait-tag selected" onclick="toggleTrait(this)">Witty</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Serious</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Inspirational</span>
+                        <span class="trait-tag selected" onclick="toggleTrait(this)">Educational</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Provocative</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Minimalist</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Storyteller</span>
+                        <span class="trait-tag" onclick="toggleTrait(this)">Data-driven</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tone Spectrum</label>
+                    <div class="tone-slider-container">
+                        <div class="tone-labels">
+                            <span>More Casual</span>
+                            <span>Balanced</span>
+                            <span>More Professional</span>
+                        </div>
+                        <input type="range" class="tone-slider" min="0" max="100" value="60">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Target Audience</label>
+                        <input type="text" class="form-input" placeholder="e.g., Entrepreneurs, Tech enthusiasts" value="Entrepreneurs, Content creators, Marketers">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Industry / Niche</label>
+                        <input type="text" class="form-input" placeholder="e.g., SaaS, Finance, Fitness" value="SaaS, Marketing, AI">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Sample Posts (for voice training)</label>
+                    <p class="form-helper" style="margin-bottom: 12px;">Add 3-5 of your best-performing posts so AI can learn your style</p>
+                    <div class="sample-posts">
+                        <div class="sample-post">
+                            <textarea placeholder="Paste your post here...">The best content strategy isn't about posting more. It's about posting what resonates. Quality over quantity, always.</textarea>
+                            <button class="remove-btn" onclick="removeSample(this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="sample-post">
+                            <textarea placeholder="Paste your post here...">AI won't replace creators. But creators who use AI will replace those who don't. The future belongs to the augmented.</textarea>
+                            <button class="remove-btn" onclick="removeSample(this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <button class="add-sample-btn" onclick="addSample()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Sample Post
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Words/Phrases to Avoid</label>
+                    <textarea class="form-textarea" placeholder="List words or phrases you never want in your content..." style="min-height: 80px;">synergy, game-changer, hustle culture, grind, 10x</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Signature Phrases (optional)</label>
+                    <textarea class="form-textarea" placeholder="Phrases you often use that define your style..." style="min-height: 80px;">Let's build together, The data doesn't lie, Here's the truth</textarea>
+                </div>
+            </div>
+
+            <!-- Connected Accounts -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Connected Accounts</h2>
+                        <p class="section-desc">Link your social media accounts to pull analytics and post directly</p>
+                    </div>
+                </div>
+
+                <div class="connected-accounts">
+                    <div class="account-item">
+                        <div class="account-info">
+                            <div class="account-icon x">
+                                <svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                            </div>
+                            <div class="account-details">
+                                <h4>X (Twitter)</h4>
+                                <p class="connected">Connected as @yourusername</p>
+                            </div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="account-btn disconnect">Disconnect</button>
+                        </div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="account-info">
+                            <div class="account-icon instagram">
+                                <svg viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            </div>
+                            <div class="account-details">
+                                <h4>Instagram</h4>
+                                <p>Not connected</p>
+                            </div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="account-btn connect">Connect</button>
+                        </div>
+                    </div>
+
+                    <div class="account-item">
+                        <div class="account-info">
+                            <div class="account-icon tiktok">
+                                <svg viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                            </div>
+                            <div class="account-details">
+                                <h4>TikTok</h4>
+                                <p>Not connected</p>
+                            </div>
+                        </div>
+                        <div class="account-actions">
+                            <button class="account-btn connect">Connect</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Preferences</h2>
+                        <p class="section-desc">Customize how ContentAI works for you</p>
+                    </div>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Auto-save drafts</h4>
+                        <p>Automatically save content as you create it</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Email notifications</h4>
+                        <p>Receive weekly performance reports via email</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Trending topic alerts</h4>
+                        <p>Get notified when relevant topics are trending</p>
+                    </div>
+                    <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>Dark mode</h4>
+                        <p>Use dark theme throughout the app</p>
+                    </div>
+                    <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="settings-section danger-zone">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Danger Zone</h2>
+                        <p class="section-desc">Irreversible actions - proceed with caution</p>
+                    </div>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <h4>Export all data</h4>
+                        <p>Download all your content, analytics, and settings</p>
+                    </div>
+                    <button class="danger-btn" onclick="exportData()">Export Data</button>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <h4>Delete all content</h4>
+                        <p>Permanently delete all generated content and drafts</p>
+                    </div>
+                    <button class="danger-btn" onclick="deleteContent()">Delete Content</button>
+                </div>
+
+                <div class="danger-item">
+                    <div class="danger-info">
+                        <h4>Delete account</h4>
+                        <p>Permanently delete your account and all associated data</p>
+                    </div>
+                    <button class="danger-btn" onclick="deleteAccount()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleTrait(el) {
+            el.classList.toggle('selected');
+        }
+
+        function toggleSwitch(el) {
+            el.classList.toggle('active');
+        }
+
+        function removeSample(btn) {
+            btn.parentElement.remove();
+        }
+
+        function addSample() {
+            const container = document.querySelector('.sample-posts');
+            const addBtn = container.querySelector('.add-sample-btn');
+            const newPost = document.createElement('div');
+            newPost.className = 'sample-post';
+            newPost.innerHTML = `
+                <textarea placeholder="Paste your post here..."></textarea>
+                <button class="remove-btn" onclick="removeSample(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            `;
+            container.insertBefore(newPost, addBtn);
+        }
+
+        function saveSettings() {
+            alert('Settings saved! (API integration coming soon)');
+        }
+
+        function exportData() {
+            alert('Preparing data export... (Coming soon)');
+        }
+
+        function deleteContent() {
+            if (confirm('Are you sure you want to delete all your content? This cannot be undone.')) {
+                alert('Content deleted. (Coming soon)');
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This will permanently remove all your data.')) {
+                alert('Account deletion initiated. (Coming soon)');
+            }
+        }
+    </script>
+</body>
+</html>

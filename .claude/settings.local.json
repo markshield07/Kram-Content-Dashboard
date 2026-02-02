@@ -20,7 +20,8 @@
       "Bash(dir \"C:\\\\Users\\\\marks\\\\Downloads\")",
       "WebFetch(domain:docs.x.com)",
       "WebFetch(domain:developer.x.com)",
-      "WebFetch(domain:kram-content-dashboard.vercel.app)"
+      "WebFetch(domain:kram-content-dashboard.vercel.app)",
+      "Bash(ls:*)"
     ]
   }
 }
