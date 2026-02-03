@@ -703,6 +703,10 @@ What would you like to create today?
         let selectedPlatform = 'x';
         let selectedTone = 'casual';
         let isGenerating = false;
+        let lastPrompt = '';
+        let lastContentType = 'post';
+        // Store generated posts for copy/regenerate
+        let generatedPostsStore = [];
 
         function selectPlatform(el, platform) {
             document.querySelectorAll('.platform-option').forEach(p => p.classList.remove('selected'));
@@ -723,150 +727,254 @@ What would you like to create today?
             }
         }
 
-        function addMessage(text, isUser = false) {
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function addMessage(text, isUser = false, isLoading = false) {
             const messagesDiv = document.getElementById('chatMessages');
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const messageHtml = `
-                <div class="message ${isUser ? 'user' : ''}">
-                    <div class="message-avatar ${isUser ? '' : 'ai'}">
-                        ${isUser ?
-                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' :
-                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>'
-                        }
-                    </div>
-                    <div class="message-content">
-                        <div class="message-text">${text}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
+            const loadingDots = isLoading ? `
+                <div class="loading-dots" style="display: flex; gap: 4px; margin-top: 8px;">
+                    <span style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 1.4s ease-in-out infinite;"></span>
+                    <span style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 1.4s ease-in-out 0.2s infinite;"></span>
+                    <span style="width: 8px; height: 8px; background: var(--accent); border-radius: 50%; animation: pulse 1.4s ease-in-out 0.4s infinite;"></span>
+                </div>` : '';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isUser ? 'user' : ''}`;
+            if (isLoading) msgDiv.id = 'loadingMessage';
+            msgDiv.innerHTML = `
+                <div class="message-avatar ${isUser ? '' : 'ai'}">
+                    ${isUser ?
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' :
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>'
+                    }
+                </div>
+                <div class="message-content">
+                    <div class="message-text">${escapeHtml(text)}</div>
+                    ${loadingDots}
+                    <div class="message-time">${time}</div>
                 </div>
             `;
 
-            messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
+            messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
+        function removeLoadingMessage() {
+            const loading = document.getElementById('loadingMessage');
+            if (loading) loading.remove();
+        }
+
         function addGeneratedPosts(posts) {
+            removeLoadingMessage();
+            generatedPostsStore = posts;
+
             const messagesDiv = document.getElementById('chatMessages');
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const platformIcons = {
-                'x': '<svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-                'instagram': '<svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07..."/></svg>',
-                'facebook': '<svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12..."/></svg>',
-                'linkedin': '<svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569..."/></svg>'
-            };
-
             const postsHtml = posts.map((post, i) => `
-                <div class="generated-post">
+                <div class="generated-post" id="gen-post-${i}">
                     <div class="generated-post-header">
                         <div class="generated-post-platform">
-                            ${platformIcons[selectedPlatform] || platformIcons['x']}
+                            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                             Option ${i + 1}
                         </div>
                         <div class="generated-post-actions">
-                            <button class="post-action-btn" onclick="copyPost('${post.replace(/'/g, "\\'")}')">Copy</button>
-                            <button class="post-action-btn" onclick="regeneratePost(${i})">Regenerate</button>
-                            <button class="post-action-btn primary" onclick="schedulePost('${post.replace(/'/g, "\\'")}')">Schedule</button>
+                            <button class="post-action-btn" data-copy-index="${i}" onclick="copyPost(${i})">Copy</button>
+                            <button class="post-action-btn" onclick="regenerateSingle(${i})">Regenerate</button>
                         </div>
                     </div>
-                    <div class="generated-post-text">${post}</div>
+                    <div class="generated-post-text">${escapeHtml(post)}</div>
                     <div class="generated-post-meta">
-                        <span>${post.length} characters</span>
+                        <span>${post.length} chars</span>
+                        <span>${selectedPlatform === 'twitter' || selectedPlatform === 'x' ? (post.length <= 280 ? '✓ Within limit' : '⚠ Over 280') : ''}</span>
                         <span>Tone: ${selectedTone}</span>
                     </div>
                 </div>
             `).join('');
 
-            const messageHtml = `
-                <div class="message">
-                    <div class="message-avatar ai">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
-                        </svg>
-                    </div>
-                    <div class="message-content">
-                        <div class="message-text">Here are some options for you:</div>
-                        <div class="generated-posts">${postsHtml}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerHTML = `
+                <div class="message-avatar ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                    </svg>
+                </div>
+                <div class="message-content" style="max-width: 85%;">
+                    <div class="message-text">Here are ${posts.length} variations for you:</div>
+                    <div class="generated-posts">${postsHtml}</div>
+                    <div class="message-time">${time}</div>
                 </div>
             `;
 
-            messagesDiv.insertAdjacentHTML('beforeend', messageHtml);
+            messagesDiv.appendChild(msgDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function copyPost(text) {
+        function addErrorMessage(errorText) {
+            removeLoadingMessage();
+            const messagesDiv = document.getElementById('chatMessages');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            msgDiv.innerHTML = `
+                <div class="message-avatar ai">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <div class="message-text" style="color: var(--error);">${escapeHtml(errorText)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function copyPost(index) {
+            const text = generatedPostsStore[index];
+            if (!text) return;
             navigator.clipboard.writeText(text).then(() => {
-                alert('Copied to clipboard!');
+                const btn = document.querySelector(`[data-copy-index="${index}"]`);
+                if (btn) {
+                    btn.textContent = 'Copied!';
+                    btn.style.color = 'var(--success)';
+                    btn.style.borderColor = 'var(--success)';
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.style.color = '';
+                        btn.style.borderColor = '';
+                    }, 2000);
+                }
             });
         }
 
-        function schedulePost(text) {
-            alert('Opening scheduler... (Coming soon!)');
-            // TODO: Open calendar/scheduler modal
-        }
+        async function regenerateSingle(index) {
+            if (isGenerating || !lastPrompt) return;
 
-        function regeneratePost(index) {
-            addMessage('Regenerating option ' + (index + 1) + '...', false);
-            // TODO: Call API to regenerate specific post
+            isGenerating = true;
+            const postEl = document.getElementById(`gen-post-${index}`);
+            if (postEl) {
+                const textEl = postEl.querySelector('.generated-post-text');
+                textEl.innerHTML = '<span style="color: var(--text-secondary);">Regenerating...</span>';
+            }
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: lastPrompt + ' (give me a fresh, different angle from before)',
+                        platform: selectedPlatform === 'x' ? 'twitter' : selectedPlatform,
+                        tone: selectedTone,
+                        type: lastContentType,
+                        variations: 1
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const newPost = data.posts ? data.posts[0] : data.content;
+                    generatedPostsStore[index] = newPost;
+                    if (postEl) {
+                        const textEl = postEl.querySelector('.generated-post-text');
+                        textEl.textContent = newPost;
+                        const metaEl = postEl.querySelector('.generated-post-meta');
+                        const isX = selectedPlatform === 'twitter' || selectedPlatform === 'x';
+                        metaEl.innerHTML = `
+                            <span>${newPost.length} chars</span>
+                            <span>${isX ? (newPost.length <= 280 ? '✓ Within limit' : '⚠ Over 280') : ''}</span>
+                            <span>Tone: ${selectedTone}</span>
+                        `;
+                    }
+                } else {
+                    if (postEl) {
+                        const textEl = postEl.querySelector('.generated-post-text');
+                        textEl.textContent = 'Failed to regenerate. Try again.';
+                    }
+                }
+            } catch (err) {
+                console.error('Regenerate error:', err);
+                if (postEl) {
+                    const textEl = postEl.querySelector('.generated-post-text');
+                    textEl.textContent = 'Error regenerating. Please try again.';
+                }
+            }
+
+            isGenerating = false;
         }
 
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
-
             if (!text || isGenerating) return;
 
             addMessage(text, true);
             input.value = '';
+            lastPrompt = text;
+            lastContentType = 'post';
 
+            await generateContent(text, 'post');
+        }
+
+        async function generateContent(prompt, contentType, variations = 3) {
             isGenerating = true;
-            addMessage('Generating content for ' + selectedPlatform.toUpperCase() + ' with a ' + selectedTone + ' tone...');
+            const platformName = selectedPlatform === 'x' ? 'X' : selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1);
+            addMessage(`Generating ${contentType === 'thread' ? 'thread' : variations + ' variations'} for ${platformName}...`, false, true);
 
             try {
                 const response = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        prompt: text,
+                        prompt: prompt,
                         platform: selectedPlatform === 'x' ? 'twitter' : selectedPlatform,
                         tone: selectedTone,
-                        type: 'post'
+                        type: contentType,
+                        variations: contentType === 'thread' ? 1 : variations
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Split content if it's a thread (contains numbered items)
-                    let posts = [data.content];
-                    if (data.content.includes('1/') || data.content.includes('1.')) {
-                        posts = data.content.split(/\n\n(?=\d[\/\.])/);
+                    let posts;
+                    if (contentType === 'thread') {
+                        // For threads, show as single post with the full thread
+                        posts = [data.posts ? data.posts[0] : data.content];
+                    } else {
+                        posts = data.posts || [data.content];
                     }
                     addGeneratedPosts(posts);
                 } else {
-                    addMessage('Error: ' + (data.error || 'Failed to generate content. Please try again.'));
+                    addErrorMessage('Error: ' + (data.error || 'Failed to generate content. Please try again.'));
                 }
             } catch (error) {
                 console.error('Generation error:', error);
-                addMessage('Error: Could not connect to the AI service. Please check if the API is configured correctly.');
+                addErrorMessage('Could not connect to the AI service. Please check your connection and try again.');
             }
 
             isGenerating = false;
         }
 
         async function quickAction(type) {
+            if (isGenerating) return;
+
             const prompts = {
                 'gm': 'Create a good morning post that feels authentic and engaging. Make it feel natural, not generic.',
-                'engagement': 'Create a post that asks a thought-provoking question to spark conversation with my audience about business, tech, or personal growth.',
-                'thread': 'Create a 3-part thread about building in public and lessons learned from entrepreneurship.',
-                'trending': 'Create a post commenting on AI and technology trends in a way that adds value and shows expertise.',
-                'promo': 'Create a promotional post that provides value first and subtly promotes a product or service without being salesy.',
-                'story': 'Create a post sharing a personal story or lesson learned that my audience can relate to and learn from.'
+                'engagement': 'Create a post that asks a thought-provoking question to spark conversation about business, tech, or personal growth.',
+                'thread': 'Create a 3-5 part thread about building in public and lessons learned. Make the first tweet a strong hook.',
+                'trending': 'Create a post commenting on current AI and technology trends that adds value and shows expertise.',
+                'promo': 'Create a promotional post that provides value first and subtly promotes without being salesy.',
+                'story': 'Create a post sharing a relatable personal story or hard-earned lesson.'
             };
 
             const contentTypes = {
@@ -878,77 +986,23 @@ What would you like to create today?
                 'story': 'post'
             };
 
-            document.getElementById('chatInput').value = prompts[type];
+            const prompt = prompts[type];
+            const contentType = contentTypes[type];
+            lastPrompt = prompt;
+            lastContentType = contentType;
 
-            // For threads, update the type
-            if (type === 'thread') {
-                await sendMessageWithType(prompts[type], 'thread');
-            } else {
-                sendMessage();
-            }
-        }
-
-        async function sendMessageWithType(text, contentType) {
-            if (!text || isGenerating) return;
-
-            addMessage(text, true);
+            addMessage(prompt, true);
             document.getElementById('chatInput').value = '';
 
-            isGenerating = true;
-            addMessage('Generating ' + contentType + ' for ' + selectedPlatform.toUpperCase() + ' with a ' + selectedTone + ' tone...');
-
-            try {
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        prompt: text,
-                        platform: selectedPlatform === 'x' ? 'twitter' : selectedPlatform,
-                        tone: selectedTone,
-                        type: contentType
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    let posts = [data.content];
-                    if (contentType === 'thread' && (data.content.includes('1/') || data.content.includes('1.'))) {
-                        posts = data.content.split(/\n\n(?=\d[\/\.])/);
-                    }
-                    addGeneratedPosts(posts);
-                } else {
-                    addMessage('Error: ' + (data.error || 'Failed to generate content. Please try again.'));
-                }
-            } catch (error) {
-                console.error('Generation error:', error);
-                addMessage('Error: Could not connect to the AI service. Please check if the API is configured correctly.');
-            }
-
-            isGenerating = false;
-        }
-
-        function generateSamplePosts(prompt) {
-            // Sample posts - replace with actual AI generation
-            const samples = {
-                'x': [
-                    'GM fam! ☀️\n\nAnother day, another chance to build something great.\n\nWhat\'s everyone working on today?',
-                    'Good morning! ☕️\n\nReminder: Your only competition is who you were yesterday.\n\nLet\'s make today count 💪',
-                    'GM! Rise and grind 🌅\n\nThe best time to start was yesterday.\nThe second best time is NOW.\n\nWhat\'s your focus today?'
-                ],
-                'instagram': [
-                    'Good morning, beautiful people! ☀️\n\nStarting this day with gratitude and good vibes.\n\nDouble tap if you\'re ready to crush it today! 💪\n\n#GoodMorning #Motivation #DailyInspiration',
-                    'Rise & shine! 🌅\n\nEvery morning is a fresh start. A new chapter. A chance to rewrite your story.\n\nWhat chapter are you writing today?\n\n#MorningMotivation #NewDay #Mindset'
-                ],
-                'default': [
-                    'Here\'s a post idea based on your request:\n\n"' + prompt.substring(0, 50) + '..."\n\nWould you like me to adjust the tone or try a different angle?'
-                ]
-            };
-
-            return samples[selectedPlatform] || samples['default'];
+            await generateContent(prompt, contentType);
         }
     </script>
+
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </body>
 </html>

@@ -30,8 +30,9 @@ class handler(BaseHTTPRequestHandler):
             platform = data.get('platform', 'twitter')
             tone = data.get('tone', 'professional')
             content_type = data.get('type', 'post')
+            variations = min(int(data.get('variations', 3)), 5)
 
-            system_prompt = self._build_system_prompt(platform, tone, content_type)
+            system_prompt = self._build_system_prompt(platform, tone, content_type, variations)
             user_prompt = prompt if prompt else f"Create an engaging {content_type} for {platform}"
 
             result = self._call_openai(api_key, system_prompt, user_prompt)
@@ -39,9 +40,17 @@ class handler(BaseHTTPRequestHandler):
             if result.get('error'):
                 self._send_json(500, {'success': False, 'error': result['error']})
             else:
+                content = result['content']
+                # Split into variations if delimiter is present
+                if '---VARIATION---' in content:
+                    posts = [p.strip() for p in content.split('---VARIATION---') if p.strip()]
+                else:
+                    posts = [content.strip()]
+
                 self._send_json(200, {
                     'success': True,
-                    'content': result['content'],
+                    'content': posts[0] if len(posts) == 1 else posts[0],
+                    'posts': posts,
                     'platform': platform,
                     'tone': tone,
                     'type': content_type
@@ -66,31 +75,40 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
-    def _build_system_prompt(self, platform, tone, content_type):
+    def _build_system_prompt(self, platform, tone, content_type, variations=1):
         platform_rules = {
-            'twitter': 'Keep posts under 280 characters. Make it punchy and engaging.',
-            'instagram': 'Can be longer. Use hashtags. Include a call-to-action.',
-            'linkedin': 'Professional tone. Can be longer form. End with a question.',
-            'tiktok': 'Casual, trendy language. Short and catchy.',
-            'facebook': 'Conversational tone. Medium length.'
+            'twitter': 'Keep posts under 280 characters. Make it punchy and engaging. Use line breaks for readability.',
+            'instagram': 'Can be longer. Use relevant hashtags. Include a call-to-action.',
+            'linkedin': 'Professional tone. Can be longer form. End with a question or call-to-action.',
+            'tiktok': 'Casual, trendy language. Short and catchy. Use popular phrases.',
+            'facebook': 'Conversational tone. Medium length. Encourage interaction.'
         }
 
         tone_desc = {
-            'professional': 'Professional and credible.',
-            'casual': 'Friendly and approachable.',
-            'witty': 'Clever and humorous.',
-            'inspirational': 'Motivating and uplifting.',
-            'educational': 'Informative and helpful.',
-            'humorous': 'Funny and entertaining.'
+            'professional': 'Professional, credible, and authoritative.',
+            'casual': 'Friendly, approachable, and conversational.',
+            'witty': 'Clever, sharp, and humorous without trying too hard.',
+            'inspirational': 'Motivating, uplifting, and genuine.',
+            'inspiring': 'Motivating, uplifting, and genuine.',
+            'educational': 'Informative, helpful, and clear.',
+            'humorous': 'Funny, entertaining, and relatable.'
         }
 
         type_rules = {
             'post': 'Create a single, standalone post.',
-            'thread': 'Create a thread of 3-5 connected posts. Number each (1/, 2/, etc).',
-            'reply': 'Create a concise, relevant reply.'
+            'thread': 'Create a thread of 3-5 connected posts. Number each (1/, 2/, etc). Make the first tweet a strong hook.',
+            'reply': 'Create a concise, relevant reply that adds value.'
         }
 
-        return f"""You are an expert social media content creator.
+        variation_rule = ''
+        if variations > 1:
+            variation_rule = f"""
+
+Generate exactly {variations} different variations of the content. Separate each variation with the delimiter "---VARIATION---".
+Each variation should take a different angle or approach while matching the same tone and platform requirements.
+Do NOT number the variations or add labels like "Variation 1:" - just provide the content separated by the delimiter."""
+
+        return f"""You are an expert social media content creator who writes viral, authentic content.
 
 Platform: {platform.upper()}
 {platform_rules.get(platform, platform_rules['twitter'])}
@@ -100,8 +118,14 @@ Tone: {tone}
 
 Type: {content_type}
 {type_rules.get(content_type, type_rules['post'])}
+{variation_rule}
 
-Create authentic, engaging content. No cringe phrases. Return ONLY the content text."""
+Important rules:
+- Write authentically. No cringe corporate-speak or overused phrases.
+- Don't use excessive emojis. 1-2 max per post if any.
+- No hashtags on X/Twitter unless specifically asked.
+- Make content that people actually want to engage with.
+- Return ONLY the content text, no explanations or meta-commentary."""
 
     def _call_openai(self, api_key, system_prompt, user_prompt):
         url = 'https://api.openai.com/v1/chat/completions'
