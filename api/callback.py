@@ -136,7 +136,7 @@ class handler(BaseHTTPRequestHandler):
 
             # Redirect to dashboard with success
             self.send_response(302)
-            self.send_header('Location', f"{app_url}/?logged_in=true")
+            self.send_header('Location', f"{app_url}/dashboard")
 
             # Set auth cookies
             self.send_header('Set-Cookie', f'x_access_token={encrypted_access}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={expires_in}')
