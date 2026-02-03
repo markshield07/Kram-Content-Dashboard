@@ -715,13 +715,11 @@
             topPosts.innerHTML = '<div class="post-item" style="justify-content: center; color: var(--text-secondary);">Loading analytics...</div>';
 
             try {
-                // Fetch profile and tweets in parallel
-                const [tweetsRes, profileRes] = await Promise.all([
-                    fetch('/api/tweets?max_results=50'),
-                    fetch('/api/profile')
-                ]);
+                // Fetch tweets first (most likely to fail)
+                const tweetsRes = await fetch('/api/tweets?max_results=50');
 
                 if (tweetsRes.status === 401) {
+                    // Check if token might be expired - suggest re-login
                     topPosts.innerHTML = `
                         <div class="empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -729,39 +727,59 @@
                                 <path d="M12 20V4"></path>
                                 <path d="M6 20v-6"></path>
                             </svg>
-                            <h3>Not signed in</h3>
-                            <p>Sign in with X to view your analytics.</p>
-                            <a href="/api/login" class="btn btn-primary">Sign In</a>
+                            <h3>Session expired</h3>
+                            <p>Your X session may have expired. Access tokens last 2 hours. Please sign in again.</p>
+                            <a href="/api/login" class="btn btn-primary">Sign In Again</a>
                         </div>
                     `;
                     return;
                 }
 
-                if (!tweetsRes.ok) throw new Error('Failed to load');
-
-                const data = await tweetsRes.json();
-
-                // Update profile stats
-                if (profileRes.ok) {
-                    const profile = await profileRes.json();
-                    const metrics = profile.metrics || {};
-                    document.getElementById('totalFollowers').textContent =
-                        (metrics.followers_count || 0).toLocaleString();
+                // Get raw text first for debugging
+                const tweetsText = await tweetsRes.text();
+                let data;
+                try {
+                    data = JSON.parse(tweetsText);
+                } catch (parseErr) {
+                    console.error('Failed to parse tweets response:', tweetsText);
+                    throw new Error('Invalid response from tweets API');
                 }
 
-                // Update tweet stats
-                document.getElementById('totalEngagement').textContent =
-                    (data.summary.total_likes + data.summary.total_retweets).toLocaleString();
-                document.getElementById('avgLikes').textContent =
-                    data.summary.avg_likes.toFixed(1);
+                if (!tweetsRes.ok) {
+                    console.error('Tweets API error:', data);
+                    throw new Error(data.error || 'Failed to load tweets');
+                }
+
+                // Fetch profile separately (don't let it break everything)
+                try {
+                    const profileRes = await fetch('/api/profile');
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        const metrics = profile.metrics || {};
+                        document.getElementById('totalFollowers').textContent =
+                            (metrics.followers_count || 0).toLocaleString();
+                    }
+                } catch (profileErr) {
+                    console.warn('Could not load profile:', profileErr);
+                }
+
+                // Safely update tweet stats
+                if (data.summary) {
+                    document.getElementById('totalEngagement').textContent =
+                        ((data.summary.total_likes || 0) + (data.summary.total_retweets || 0)).toLocaleString();
+                    document.getElementById('avgLikes').textContent =
+                        (data.summary.avg_likes || 0).toFixed(1);
+                }
 
                 // Calculate best posting time from tweets
-                if (data.tweets.length > 0) {
+                const tweets = data.tweets || [];
+                if (tweets.length > 0) {
                     const hours = {};
-                    data.tweets.forEach(t => {
+                    tweets.forEach(t => {
+                        if (!t.created_at) return;
                         const hour = new Date(t.created_at).getHours();
                         if (!hours[hour]) hours[hour] = { total: 0, count: 0 };
-                        hours[hour].total += t.engagement_score;
+                        hours[hour].total += (t.engagement_score || 0);
                         hours[hour].count++;
                     });
                     let bestHour = 9;
@@ -776,7 +794,7 @@
                 }
 
                 // Render top posts
-                if (data.tweets.length === 0) {
+                if (tweets.length === 0) {
                     topPosts.innerHTML = `
                         <div class="empty-state">
                             <h3>No posts found</h3>
@@ -786,17 +804,19 @@
                     return;
                 }
 
-                topPosts.innerHTML = data.tweets.slice(0, 10).map((tweet, i) => `
+                topPosts.innerHTML = tweets.slice(0, 10).map((tweet, i) => {
+                    const metrics = tweet.metrics || {};
+                    return `
                     <div class="post-item">
                         <div class="post-rank">${i + 1}</div>
                         <div class="post-content">
-                            <div class="post-text">${tweet.text}</div>
+                            <div class="post-text">${tweet.text || ''}</div>
                             <div class="post-metrics">
                                 <span class="post-metric">
                                     <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                     </svg>
-                                    ${tweet.metrics.like_count}
+                                    ${metrics.like_count || 0}
                                 </span>
                                 <span class="post-metric">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -805,27 +825,28 @@
                                         <path d="M7 23l-4-4 4-4"></path>
                                         <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                                     </svg>
-                                    ${tweet.metrics.retweet_count}
+                                    ${metrics.retweet_count || 0}
                                 </span>
                                 <span class="post-metric">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                                     </svg>
-                                    ${tweet.metrics.reply_count}
+                                    ${metrics.reply_count || 0}
                                 </span>
                             </div>
                         </div>
-                        <div class="post-date">${new Date(tweet.created_at).toLocaleDateString()}</div>
+                        <div class="post-date">${tweet.created_at ? new Date(tweet.created_at).toLocaleDateString() : ''}</div>
                     </div>
-                `).join('');
+                `}).join('');
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Analytics error:', error);
                 topPosts.innerHTML = `
                     <div class="empty-state">
                         <h3>Error loading analytics</h3>
-                        <p>Please try again later.</p>
-                        <button class="btn btn-primary" onclick="refreshAnalytics()">Retry</button>
+                        <p>${error.message || 'Please try again later.'}</p>
+                        <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Try <a href="/api/login" style="color: var(--accent);">signing in again</a> if your session expired.</p>
+                        <button class="btn btn-primary" onclick="refreshAnalytics()" style="margin-top: 16px;">Retry</button>
                     </div>
                 `;
             }
