@@ -749,6 +749,8 @@
             document.getElementById('promptInput').value = el.textContent.trim();
         }
 
+        let generatedImages = [];
+
         async function generateImage() {
             const prompt = document.getElementById('promptInput').value.trim();
             if (!prompt) {
@@ -767,58 +769,109 @@
             container.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <div class="loading-text">Creating your image...</div>
+                    <div class="loading-text">Creating your image with DALL-E 3... This may take 15-30 seconds.</div>
                 </div>
             `;
 
-            // Simulate image generation (replace with actual API call)
-            setTimeout(() => {
-                // Sample result - replace with actual generated image
-                const sampleImages = [
-                    'https://via.placeholder.com/400x400/1a1a1a/f7931a?text=Generated+Image+1',
-                    'https://via.placeholder.com/400x400/1a1a1a/f7931a?text=Generated+Image+2'
-                ];
+            const aspectRatio = document.getElementById('aspectRatio').value;
+            const quality = document.getElementById('quality').value;
 
-                container.innerHTML = `
-                    <div class="results-grid">
-                        ${sampleImages.map((img, i) => `
-                            <div class="result-card">
-                                <img src="${img}" class="result-image" alt="Generated image ${i + 1}">
-                                <div class="result-actions">
-                                    <button class="result-btn" onclick="downloadImage('${img}')">Download</button>
-                                    <button class="result-btn" onclick="regenerate()">Regenerate</button>
-                                    <button class="result-btn primary" onclick="useInPost()">Use in Post</button>
+            try {
+                const response = await fetch('/api/image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        style: selectedPreset,
+                        aspect_ratio: aspectRatio,
+                        quality: quality
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.images && data.images.length > 0) {
+                    generatedImages = data.images;
+
+                    container.innerHTML = `
+                        <div class="results-grid">
+                            ${data.images.map((img, i) => `
+                                <div class="result-card">
+                                    <img src="${img}" class="result-image" alt="Generated image ${i + 1}" loading="lazy">
+                                    <div class="result-actions">
+                                        <button class="result-btn" onclick="downloadImage(${i})">Download</button>
+                                        <button class="result-btn" onclick="regenerate()">Regenerate</button>
+                                        <button class="result-btn primary" onclick="copyImageUrl(${i})">Copy URL</button>
+                                    </div>
                                 </div>
+                            `).join('')}
+                        </div>
+                        ${data.revised_prompt ? `
+                            <div style="margin-top: 16px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">DALL-E Interpreted Prompt</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(data.revised_prompt)}</div>
                             </div>
-                        `).join('')}
+                        ` : ''}
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-results">
+                            <h3 style="color: var(--error);">Generation Failed</h3>
+                            <p>${escapeHtml(data.error || 'Unknown error occurred')}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Image generation error:', error);
+                container.innerHTML = `
+                    <div class="empty-results">
+                        <h3 style="color: var(--error);">Connection Error</h3>
+                        <p>Could not connect to the image generation API. Please try again.</p>
                     </div>
                 `;
+            }
 
-                btn.disabled = false;
-                btn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    Generate Image
-                `;
-                isGenerating = false;
-            }, 3000);
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Generate Image
+            `;
+            isGenerating = false;
         }
 
-        function downloadImage(url) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'generated-image.png';
-            a.click();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function downloadImage(index) {
+            const url = generatedImages[index];
+            if (!url) return;
+            // Open in new tab for download (DALL-E URLs are temporary)
+            window.open(url, '_blank');
+        }
+
+        function copyImageUrl(index) {
+            const url = generatedImages[index];
+            if (!url) return;
+            navigator.clipboard.writeText(url).then(() => {
+                const btns = document.querySelectorAll('.result-btn.primary');
+                if (btns[index]) {
+                    btns[index].textContent = 'Copied!';
+                    btns[index].style.background = 'var(--success)';
+                    setTimeout(() => {
+                        btns[index].textContent = 'Copy URL';
+                        btns[index].style.background = '';
+                    }, 2000);
+                }
+            });
         }
 
         function regenerate() {
             generateImage();
-        }
-
-        function useInPost() {
-            alert('Opening content generator with this image... (Coming soon!)');
-            // TODO: Navigate to /generate with the image attached
         }
     </script>
 </body>
