@@ -77,11 +77,52 @@
         .quick-action-btn svg { width: 18px; height: 18px; }
 
         .user-menu {
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; position: relative;
+        }
+
+        .user-avatar {
             width: 40px; height: 40px; border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--accent-hover));
             display: flex; align-items: center; justify-content: center;
-            font-weight: 600; color: #000; cursor: pointer;
+            font-weight: 600; color: #000; overflow: hidden;
         }
+
+        .user-avatar img {
+            width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+        }
+
+        .user-info { text-align: right; }
+        .user-name { font-size: 14px; font-weight: 500; }
+        .user-handle { font-size: 12px; color: var(--text-secondary); }
+
+        .user-dropdown {
+            position: absolute; top: 50px; right: 0;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 8px; min-width: 180px;
+            display: none; z-index: 100;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .user-dropdown.active { display: block; }
+
+        .dropdown-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 6px; font-size: 13px;
+            color: var(--text-secondary); text-decoration: none; transition: all 0.2s;
+        }
+        .dropdown-item:hover { background: var(--bg-secondary); color: var(--text-primary); }
+        .dropdown-item svg { width: 16px; height: 16px; }
+        .dropdown-item.logout { color: var(--error); }
+        .dropdown-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+        .login-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-primary); font-size: 14px;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .login-btn:hover { border-color: var(--accent); }
+        .login-btn svg { width: 18px; height: 18px; }
 
         .content-area { padding: 30px; }
 
@@ -302,7 +343,7 @@
     <main class="main-content">
         <header class="top-header">
             <div class="header-left">
-                <h1>Welcome back!</h1>
+                <h1 id="welcomeMsg">Welcome back!</h1>
                 <p>Here's what's happening with your content today</p>
             </div>
             <div class="header-right">
@@ -310,7 +351,32 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Create Content
                 </a>
-                <div class="user-menu">M</div>
+
+                <!-- Logged in state -->
+                <div class="user-menu" id="userMenu" style="display:none;" onclick="toggleDropdown()">
+                    <div class="user-info">
+                        <div class="user-name" id="userName"></div>
+                        <div class="user-handle" id="userHandle"></div>
+                    </div>
+                    <div class="user-avatar" id="userAvatar"></div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="/settings" class="dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.38.94 1.27 1.56 2.28 1.57H21.78a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            Settings
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/api/logout" class="dropdown-item logout">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            Logout
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Logged out state -->
+                <a href="/api/login" class="login-btn" id="loginBtn" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    Sign in with X
+                </a>
             </div>
         </header>
 
@@ -568,6 +634,66 @@
     </main>
 
     <script>
+        // Read user cookie and show profile
+        function getUserFromCookie() {
+            try {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'x_user') {
+                        return JSON.parse(atob(decodeURIComponent(value)));
+                    }
+                }
+            } catch (e) {
+                console.log('No user cookie found');
+            }
+            return null;
+        }
+
+        function initUser() {
+            const user = getUserFromCookie();
+            const userMenu = document.getElementById('userMenu');
+            const loginBtn = document.getElementById('loginBtn');
+            const welcomeMsg = document.getElementById('welcomeMsg');
+
+            if (user && user.username) {
+                // Show logged-in state
+                userMenu.style.display = 'flex';
+                loginBtn.style.display = 'none';
+
+                document.getElementById('userName').textContent = user.name || user.username;
+                document.getElementById('userHandle').textContent = '@' + user.username;
+
+                if (user.profile_image_url) {
+                    document.getElementById('userAvatar').innerHTML =
+                        '<img src="' + user.profile_image_url + '" alt="' + user.name + '">';
+                } else {
+                    document.getElementById('userAvatar').textContent =
+                        (user.name || user.username).charAt(0).toUpperCase();
+                }
+
+                welcomeMsg.textContent = 'Welcome back, ' + (user.name || user.username) + '!';
+            } else {
+                // Show logged-out state
+                userMenu.style.display = 'none';
+                loginBtn.style.display = 'flex';
+            }
+        }
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('userMenu');
+            const dropdown = document.getElementById('userDropdown');
+            if (menu && !menu.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
         // Trending topic click handler
         document.querySelectorAll('.trending-action').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -575,6 +701,9 @@
                 window.location.href = `/generate?topic=${encodeURIComponent(topic)}`;
             });
         });
+
+        // Initialize on page load
+        initUser();
     </script>
 </body>
 </html>
