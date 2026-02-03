@@ -121,8 +121,14 @@ class handler(BaseHTTPRequestHandler):
         if user_response.status_code != 200:
             self.send_response(user_response.status_code)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({'error': 'Failed to get user info'}).encode())
+            try:
+                user_err = user_response.json()
+                err_detail = user_err.get('detail', user_err.get('title', 'Unknown error'))
+            except Exception:
+                err_detail = f"Status {user_response.status_code}"
+            self.wfile.write(json.dumps({'error': f'Failed to get user info: {err_detail}'}).encode())
             return
 
         user_id = user_response.json().get('data', {}).get('id')
@@ -144,9 +150,23 @@ class handler(BaseHTTPRequestHandler):
         if tweets_response.status_code != 200:
             self.send_response(tweets_response.status_code)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            error_data = tweets_response.json()
-            self.wfile.write(json.dumps({'error': 'Failed to fetch tweets', 'details': error_data}).encode())
+            try:
+                error_data = tweets_response.json()
+                # Extract meaningful error message from X API response
+                x_error = ''
+                if 'detail' in error_data:
+                    x_error = error_data['detail']
+                elif 'errors' in error_data and len(error_data['errors']) > 0:
+                    x_error = error_data['errors'][0].get('message', '')
+                elif 'title' in error_data:
+                    x_error = error_data['title']
+                error_msg = f"X API error ({tweets_response.status_code}): {x_error}" if x_error else f"X API returned status {tweets_response.status_code}"
+            except Exception:
+                error_msg = f"X API returned status {tweets_response.status_code}"
+                error_data = {}
+            self.wfile.write(json.dumps({'error': error_msg, 'details': error_data}).encode())
             return
 
         tweets_data = tweets_response.json()
