@@ -702,8 +702,76 @@
             });
         });
 
+        // Load real stats from X API
+        async function loadDashboardStats() {
+            const user = getUserFromCookie();
+            if (!user || !user.username) return;
+
+            try {
+                const [profileRes, tweetsRes] = await Promise.all([
+                    fetch('/api/profile'),
+                    fetch('/api/tweets?max_results=50')
+                ]);
+
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    const m = profile.metrics || {};
+                    // Update follower count
+                    const followerEl = document.querySelector('.stat-value');
+                    if (followerEl) followerEl.textContent = (m.followers_count || 0).toLocaleString();
+                }
+
+                if (tweetsRes.ok) {
+                    const data = await tweetsRes.json();
+                    const statValues = document.querySelectorAll('.stat-value');
+
+                    // Engagement rate
+                    if (statValues[1]) {
+                        const totalEng = data.summary.total_likes + data.summary.total_retweets + data.summary.total_replies;
+                        const rate = data.summary.total_tweets > 0 ? ((totalEng / data.summary.total_tweets) / 100 * 100).toFixed(1) : '0';
+                        statValues[1].textContent = rate + '%';
+                    }
+
+                    // Posts this month
+                    if (statValues[2]) statValues[2].textContent = data.summary.total_tweets;
+
+                    // Impressions (likes + retweets as proxy)
+                    if (statValues[3]) {
+                        const total = data.summary.total_likes + data.summary.total_retweets;
+                        if (total >= 1000000) statValues[3].textContent = (total / 1000000).toFixed(1) + 'M';
+                        else if (total >= 1000) statValues[3].textContent = (total / 1000).toFixed(1) + 'K';
+                        else statValues[3].textContent = total.toLocaleString();
+                    }
+
+                    // Update recent content with real tweets
+                    const contentList = document.querySelector('.content-list');
+                    if (contentList && data.tweets.length > 0) {
+                        contentList.innerHTML = data.tweets.slice(0, 3).map(tweet => `
+                            <div class="content-item">
+                                <div class="content-thumb">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                </div>
+                                <div class="content-details">
+                                    <p class="content-text">${tweet.text}</p>
+                                    <div class="content-meta">
+                                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> ${tweet.metrics.like_count}</span>
+                                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg> ${tweet.metrics.retweet_count}</span>
+                                        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${tweet.metrics.reply_count}</span>
+                                    </div>
+                                </div>
+                                <span class="content-status published">Published</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load dashboard stats:', e);
+            }
+        }
+
         // Initialize on page load
         initUser();
+        loadDashboardStats();
     </script>
 </body>
 </html>

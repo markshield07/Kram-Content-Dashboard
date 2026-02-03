@@ -715,9 +715,13 @@
             topPosts.innerHTML = '<div class="post-item" style="justify-content: center; color: var(--text-secondary);">Loading analytics...</div>';
 
             try {
-                const response = await fetch('/api/tweets?max_results=50');
+                // Fetch profile and tweets in parallel
+                const [tweetsRes, profileRes] = await Promise.all([
+                    fetch('/api/tweets?max_results=50'),
+                    fetch('/api/profile')
+                ]);
 
-                if (response.status === 401) {
+                if (tweetsRes.status === 401) {
                     topPosts.innerHTML = `
                         <div class="empty-state">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -727,22 +731,49 @@
                             </svg>
                             <h3>Not signed in</h3>
                             <p>Sign in with X to view your analytics.</p>
-                            <a href="/login" class="btn btn-primary">Sign In</a>
+                            <a href="/api/login" class="btn btn-primary">Sign In</a>
                         </div>
                     `;
                     return;
                 }
 
-                if (!response.ok) throw new Error('Failed to load');
+                if (!tweetsRes.ok) throw new Error('Failed to load');
 
-                const data = await response.json();
+                const data = await tweetsRes.json();
 
-                // Update stats
+                // Update profile stats
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    const metrics = profile.metrics || {};
+                    document.getElementById('totalFollowers').textContent =
+                        (metrics.followers_count || 0).toLocaleString();
+                }
+
+                // Update tweet stats
                 document.getElementById('totalEngagement').textContent =
                     (data.summary.total_likes + data.summary.total_retweets).toLocaleString();
                 document.getElementById('avgLikes').textContent =
                     data.summary.avg_likes.toFixed(1);
-                document.getElementById('bestTime').textContent = '9 AM';
+
+                // Calculate best posting time from tweets
+                if (data.tweets.length > 0) {
+                    const hours = {};
+                    data.tweets.forEach(t => {
+                        const hour = new Date(t.created_at).getHours();
+                        if (!hours[hour]) hours[hour] = { total: 0, count: 0 };
+                        hours[hour].total += t.engagement_score;
+                        hours[hour].count++;
+                    });
+                    let bestHour = 9;
+                    let bestAvg = 0;
+                    Object.entries(hours).forEach(([h, v]) => {
+                        const avg = v.total / v.count;
+                        if (avg > bestAvg) { bestAvg = avg; bestHour = parseInt(h); }
+                    });
+                    const ampm = bestHour >= 12 ? 'PM' : 'AM';
+                    const displayHour = bestHour > 12 ? bestHour - 12 : (bestHour === 0 ? 12 : bestHour);
+                    document.getElementById('bestTime').textContent = `${displayHour} ${ampm}`;
+                }
 
                 // Render top posts
                 if (data.tweets.length === 0) {
