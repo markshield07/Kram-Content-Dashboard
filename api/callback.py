@@ -38,7 +38,7 @@ class handler(BaseHTTPRequestHandler):
         state = params.get('state', [None])[0]
         error = params.get('error', [None])[0]
 
-        app_url = os.environ.get('APP_URL', 'http://localhost:3000')
+        app_url = os.environ.get('APP_URL', 'https://kram-content-dashboard.vercel.app')
 
         # Handle errors from X
         if error:
