@@ -35,7 +35,7 @@ def decrypt_token(encrypted_token, key):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        app_url = os.environ.get('APP_URL', 'http://localhost:3000')
+        app_url = os.environ.get('APP_URL', 'https://kram-content-dashboard.vercel.app')
         client_id = os.environ.get('X_CLIENT_ID')
         client_secret = os.environ.get('X_CLIENT_SECRET')
         encryption_key = os.environ.get('ENCRYPTION_KEY')
