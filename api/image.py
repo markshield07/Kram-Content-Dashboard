@@ -116,29 +116,41 @@ class handler(BaseHTTPRequestHandler):
             'Authorization': f'Bearer {api_key}'
         }
 
-        system_msg = """You are an expert image prompt engineer. The user has uploaded a reference image and wants to generate a new image inspired by it.
+        system_msg = """You are an expert at describing images in extreme detail for image generation.
 
-Your job:
-1. Analyze the reference image in detail (subject, composition, colors, mood, style, key elements)
-2. Combine your analysis with the user's prompt and the requested style
-3. Create a single, detailed DALL-E 3 prompt that captures the essence of the reference image while incorporating the user's creative direction
+The user uploaded a REFERENCE IMAGE. Your job is to describe the main subject/character in that image with EXTREME PRECISION so that DALL-E 3 can recreate it as accurately as possible in a new scene.
+
+STEP 1: Describe the reference image subject in hyper-specific detail:
+- Exact colors (not just "blue" but "deep cobalt blue with cyan highlights")
+- Physical features, proportions, distinguishing marks
+- Clothing, accessories, textures, patterns
+- Facial expression, pose, body language
+- Any unique/distinctive elements that make this character recognizable
+
+STEP 2: Combine that detailed character description with the user's creative direction and style.
+
+STEP 3: Write a single DALL-E 3 prompt that:
+- Starts with the detailed character description so DALL-E knows EXACTLY what the subject looks like
+- Then places that character in the scene/setting the user requested
+- Applies the requested art style
+- Is under 1500 characters
 
 Return your response in this exact JSON format:
-{"description": "Brief description of what you see in the reference image", "prompt": "Your detailed DALL-E 3 prompt here"}
+{"description": "2-3 sentence summary of the reference image", "prompt": "Your hyper-detailed DALL-E 3 prompt"}
 
-The prompt should be vivid, specific, and under 1000 characters. Do NOT mention that it's based on a reference image."""
+CRITICAL: The more specific and detailed your character description, the closer DALL-E's output will match the reference. Be obsessively detailed about the subject's appearance."""
 
         # Build the content array with text and image
         user_content = [
             {
                 "type": "text",
-                "text": f"Reference image is attached. User's request: {user_prompt}. Requested style: {style_suffix}"
+                "text": f"Here is my reference image. Describe the main subject in extreme detail, then place them in this scene: {user_prompt}. Apply this style: {style_suffix}"
             },
             {
                 "type": "image_url",
                 "image_url": {
                     "url": image_data,
-                    "detail": "low"  # Use low detail to save tokens/cost
+                    "detail": "high"
                 }
             }
         ]
@@ -149,8 +161,8 @@ The prompt should be vivid, specific, and under 1000 characters. Do NOT mention 
                 {'role': 'system', 'content': system_msg},
                 {'role': 'user', 'content': user_content}
             ],
-            'temperature': 0.7,
-            'max_tokens': 500
+            'temperature': 0.5,
+            'max_tokens': 1000
         }
 
         try:
@@ -165,9 +177,16 @@ The prompt should be vivid, specific, and under 1000 characters. Do NOT mention 
                 result = json.loads(response.read().decode('utf-8'))
                 content = result['choices'][0]['message']['content'].strip()
 
-                # Parse the JSON response
+                # Parse the JSON response - handle markdown code blocks
+                clean = content.strip()
+                if clean.startswith('```'):
+                    # Remove markdown code block wrapper
+                    clean = clean.split('\n', 1)[1] if '\n' in clean else clean[3:]
+                    if clean.endswith('```'):
+                        clean = clean[:-3].strip()
+
                 try:
-                    parsed = json.loads(content)
+                    parsed = json.loads(clean)
                     return {
                         'prompt': parsed.get('prompt', f"{user_prompt}. {style_suffix}"),
                         'description': parsed.get('description', '')
