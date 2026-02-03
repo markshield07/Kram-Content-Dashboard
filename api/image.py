@@ -31,6 +31,7 @@ class handler(BaseHTTPRequestHandler):
             style = data.get('style', 'realistic')
             aspect_ratio = data.get('aspect_ratio', '1:1')
             quality = data.get('quality', 'standard')
+            reference_image = data.get('reference_image', '')  # base64 data URL
 
             if not prompt:
                 self._send_json(400, {'success': False, 'error': 'Prompt is required'})
@@ -41,14 +42,14 @@ class handler(BaseHTTPRequestHandler):
                 '1:1': '1024x1024',
                 '16:9': '1792x1024',
                 '9:16': '1024x1792',
-                '4:3': '1024x1024',  # DALL-E 3 doesn't support 4:3, use square
+                '4:3': '1024x1024',
             }
             size = size_map.get(aspect_ratio, '1024x1024')
 
             # Map quality
             dall_e_quality = 'hd' if quality in ('high', 'ultra') else 'standard'
 
-            # Build enhanced prompt with style
+            # Style descriptions
             style_prompts = {
                 'realistic': 'Photorealistic, highly detailed, professional photography style.',
                 'anime': 'Anime art style, vibrant colors, detailed illustration, manga-inspired.',
@@ -57,10 +58,23 @@ class handler(BaseHTTPRequestHandler):
                 'cyberpunk': 'Cyberpunk aesthetic, neon lights, dark atmosphere, futuristic technology, rain-slicked streets.',
                 'watercolor': 'Watercolor painting style, soft edges, flowing colors, artistic brush strokes.',
             }
-
             style_suffix = style_prompts.get(style, style_prompts['realistic'])
-            full_prompt = f"{prompt}. {style_suffix}"
 
+            # If reference image provided, use GPT-4o vision to create an enhanced prompt
+            if reference_image:
+                enhanced = self._enhance_prompt_with_vision(
+                    api_key, prompt, style_suffix, reference_image
+                )
+                if enhanced.get('error'):
+                    self._send_json(500, {'success': False, 'error': enhanced['error']})
+                    return
+                full_prompt = enhanced['prompt']
+                vision_description = enhanced.get('description', '')
+            else:
+                full_prompt = f"{prompt}. {style_suffix}"
+                vision_description = ''
+
+            # Generate image with DALL-E 3
             result = self._call_dalle(api_key, full_prompt, size, dall_e_quality)
 
             if result.get('error'):
@@ -70,6 +84,8 @@ class handler(BaseHTTPRequestHandler):
                     'success': True,
                     'images': result['images'],
                     'revised_prompt': result.get('revised_prompt', ''),
+                    'enhanced_prompt': full_prompt if reference_image else '',
+                    'vision_description': vision_description,
                 })
 
         except json.JSONDecodeError:
@@ -90,6 +106,86 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
+
+    def _enhance_prompt_with_vision(self, api_key, user_prompt, style_suffix, image_data):
+        """Use GPT-4o to analyze the reference image and create a detailed DALL-E prompt."""
+        url = 'https://api.openai.com/v1/chat/completions'
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+
+        system_msg = """You are an expert image prompt engineer. The user has uploaded a reference image and wants to generate a new image inspired by it.
+
+Your job:
+1. Analyze the reference image in detail (subject, composition, colors, mood, style, key elements)
+2. Combine your analysis with the user's prompt and the requested style
+3. Create a single, detailed DALL-E 3 prompt that captures the essence of the reference image while incorporating the user's creative direction
+
+Return your response in this exact JSON format:
+{"description": "Brief description of what you see in the reference image", "prompt": "Your detailed DALL-E 3 prompt here"}
+
+The prompt should be vivid, specific, and under 1000 characters. Do NOT mention that it's based on a reference image."""
+
+        # Build the content array with text and image
+        user_content = [
+            {
+                "type": "text",
+                "text": f"Reference image is attached. User's request: {user_prompt}. Requested style: {style_suffix}"
+            },
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": image_data,
+                    "detail": "low"  # Use low detail to save tokens/cost
+                }
+            }
+        ]
+
+        payload = {
+            'model': 'gpt-4o',
+            'messages': [
+                {'role': 'system', 'content': system_msg},
+                {'role': 'user', 'content': user_content}
+            ],
+            'temperature': 0.7,
+            'max_tokens': 500
+        }
+
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers=headers,
+                method='POST'
+            )
+
+            with urllib.request.urlopen(req, timeout=30) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                content = result['choices'][0]['message']['content'].strip()
+
+                # Parse the JSON response
+                try:
+                    parsed = json.loads(content)
+                    return {
+                        'prompt': parsed.get('prompt', f"{user_prompt}. {style_suffix}"),
+                        'description': parsed.get('description', '')
+                    }
+                except json.JSONDecodeError:
+                    # If GPT didn't return valid JSON, use the raw text as the prompt
+                    return {'prompt': content, 'description': ''}
+
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8')
+            try:
+                err_data = json.loads(error_body)
+                err_msg = err_data.get('error', {}).get('message', error_body)
+            except Exception:
+                err_msg = error_body
+            return {'error': f'GPT-4o vision error: {err_msg}'}
+        except Exception as e:
+            return {'error': f'Vision analysis error: {str(e)}'}
 
     def _call_dalle(self, api_key, prompt, size, quality):
         url = 'https://api.openai.com/v1/images/generations'
@@ -133,7 +229,7 @@ class handler(BaseHTTPRequestHandler):
                 err_msg = err_data.get('error', {}).get('message', error_body)
             except Exception:
                 err_msg = error_body
-            return {'error': f'OpenAI API error: {err_msg}'}
+            return {'error': f'DALL-E error: {err_msg}'}
         except urllib.error.URLError as e:
             return {'error': f'Network error: {str(e)}'}
         except Exception as e:

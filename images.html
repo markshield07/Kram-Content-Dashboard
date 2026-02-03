@@ -776,22 +776,62 @@
             const aspectRatio = document.getElementById('aspectRatio').value;
             const quality = document.getElementById('quality').value;
 
+            const loadingText = uploadedImage
+                ? 'Analyzing reference image with GPT-4o, then generating with DALL-E 3...'
+                : 'Creating your image with DALL-E 3... This may take 15-30 seconds.';
+            container.querySelector('.loading-text').textContent = loadingText;
+
+            const requestBody = {
+                prompt: prompt,
+                style: selectedPreset,
+                aspect_ratio: aspectRatio,
+                quality: quality
+            };
+
+            // Include reference image if uploaded
+            if (uploadedImage) {
+                requestBody.reference_image = uploadedImage;
+            }
+
             try {
                 const response = await fetch('/api/image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        style: selectedPreset,
-                        aspect_ratio: aspectRatio,
-                        quality: quality
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
 
                 if (data.success && data.images && data.images.length > 0) {
                     generatedImages = data.images;
+
+                    let infoCards = '';
+
+                    // Show vision analysis if reference image was used
+                    if (data.vision_description) {
+                        infoCards += `
+                            <div style="margin-top: 16px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">GPT-4o Reference Analysis</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(data.vision_description)}</div>
+                            </div>
+                        `;
+                    }
+
+                    if (data.enhanced_prompt) {
+                        infoCards += `
+                            <div style="margin-top: 8px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Enhanced Prompt (sent to DALL-E)</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(data.enhanced_prompt)}</div>
+                            </div>
+                        `;
+                    } else if (data.revised_prompt) {
+                        infoCards += `
+                            <div style="margin-top: 8px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">DALL-E Interpreted Prompt</div>
+                                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(data.revised_prompt)}</div>
+                            </div>
+                        `;
+                    }
 
                     container.innerHTML = `
                         <div class="results-grid">
@@ -806,12 +846,7 @@
                                 </div>
                             `).join('')}
                         </div>
-                        ${data.revised_prompt ? `
-                            <div style="margin-top: 16px; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;">
-                                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">DALL-E Interpreted Prompt</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">${escapeHtml(data.revised_prompt)}</div>
-                            </div>
-                        ` : ''}
+                        ${infoCards}
                     `;
                 } else {
                     container.innerHTML = `
