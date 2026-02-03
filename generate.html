@@ -825,26 +825,109 @@ What would you like to create today?
             isGenerating = true;
             addMessage('Generating content for ' + selectedPlatform.toUpperCase() + ' with a ' + selectedTone + ' tone...');
 
-            // Simulate AI response (replace with actual API call)
-            setTimeout(() => {
-                const samplePosts = generateSamplePosts(text);
-                addGeneratedPosts(samplePosts);
-                isGenerating = false;
-            }, 1500);
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: text,
+                        platform: selectedPlatform === 'x' ? 'twitter' : selectedPlatform,
+                        tone: selectedTone,
+                        type: 'post'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Split content if it's a thread (contains numbered items)
+                    let posts = [data.content];
+                    if (data.content.includes('1/') || data.content.includes('1.')) {
+                        posts = data.content.split(/\n\n(?=\d[\/\.])/);
+                    }
+                    addGeneratedPosts(posts);
+                } else {
+                    addMessage('Error: ' + (data.error || 'Failed to generate content. Please try again.'));
+                }
+            } catch (error) {
+                console.error('Generation error:', error);
+                addMessage('Error: Could not connect to the AI service. Please check if the API is configured correctly.');
+            }
+
+            isGenerating = false;
         }
 
-        function quickAction(type) {
+        async function quickAction(type) {
             const prompts = {
-                'gm': 'Create a good morning post that feels authentic and engaging',
-                'engagement': 'Create a post that asks a question or sparks conversation with my audience',
-                'thread': 'Create a thread starter about an interesting topic in my niche',
-                'trending': 'Create a post related to current trending topics',
-                'promo': 'Create a promotional post that doesn\'t feel too salesy',
-                'story': 'Help me share a personal story or experience'
+                'gm': 'Create a good morning post that feels authentic and engaging. Make it feel natural, not generic.',
+                'engagement': 'Create a post that asks a thought-provoking question to spark conversation with my audience about business, tech, or personal growth.',
+                'thread': 'Create a 3-part thread about building in public and lessons learned from entrepreneurship.',
+                'trending': 'Create a post commenting on AI and technology trends in a way that adds value and shows expertise.',
+                'promo': 'Create a promotional post that provides value first and subtly promotes a product or service without being salesy.',
+                'story': 'Create a post sharing a personal story or lesson learned that my audience can relate to and learn from.'
+            };
+
+            const contentTypes = {
+                'gm': 'post',
+                'engagement': 'post',
+                'thread': 'thread',
+                'trending': 'post',
+                'promo': 'post',
+                'story': 'post'
             };
 
             document.getElementById('chatInput').value = prompts[type];
-            sendMessage();
+
+            // For threads, update the type
+            if (type === 'thread') {
+                await sendMessageWithType(prompts[type], 'thread');
+            } else {
+                sendMessage();
+            }
+        }
+
+        async function sendMessageWithType(text, contentType) {
+            if (!text || isGenerating) return;
+
+            addMessage(text, true);
+            document.getElementById('chatInput').value = '';
+
+            isGenerating = true;
+            addMessage('Generating ' + contentType + ' for ' + selectedPlatform.toUpperCase() + ' with a ' + selectedTone + ' tone...');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: text,
+                        platform: selectedPlatform === 'x' ? 'twitter' : selectedPlatform,
+                        tone: selectedTone,
+                        type: contentType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let posts = [data.content];
+                    if (contentType === 'thread' && (data.content.includes('1/') || data.content.includes('1.'))) {
+                        posts = data.content.split(/\n\n(?=\d[\/\.])/);
+                    }
+                    addGeneratedPosts(posts);
+                } else {
+                    addMessage('Error: ' + (data.error || 'Failed to generate content. Please try again.'));
+                }
+            } catch (error) {
+                console.error('Generation error:', error);
+                addMessage('Error: Could not connect to the AI service. Please check if the API is configured correctly.');
+            }
+
+            isGenerating = false;
         }
 
         function generateSamplePosts(prompt) {
