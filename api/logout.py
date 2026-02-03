@@ -46,7 +46,13 @@ class handler(BaseHTTPRequestHandler):
 
         # Try to revoke the token with X API
         if encrypted_access and client_id:
-            access_token = decrypt_token(encrypted_access, encryption_key) if encryption_key else None
+            if encryption_key:
+                access_token = decrypt_token(encrypted_access, encryption_key)
+            else:
+                try:
+                    access_token = base64.b64decode(encrypted_access).decode()
+                except Exception:
+                    access_token = None
 
             if access_token:
                 try:

@@ -49,7 +49,14 @@ class handler(BaseHTTPRequestHandler):
             return
 
         # Decrypt access token
-        access_token = decrypt_token(encrypted_access, encryption_key) if encryption_key else None
+        if encryption_key:
+            access_token = decrypt_token(encrypted_access, encryption_key)
+        else:
+            # No encryption key set - tokens are base64 encoded
+            try:
+                access_token = base64.b64decode(encrypted_access).decode()
+            except Exception:
+                access_token = None
 
         if not access_token:
             self.send_response(401)
