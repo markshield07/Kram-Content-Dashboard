@@ -225,8 +225,8 @@
 
         .presets-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
         }
 
         .preset-card {
@@ -486,7 +486,7 @@
             }
 
             .presets-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
 
             .options-grid {
@@ -616,40 +616,64 @@
                 </div>
 
                 <div class="prompt-section">
-                    <label class="prompt-label">Describe your image</label>
+                    <label class="prompt-label">Describe the scene / background</label>
                     <textarea
                         class="prompt-input"
                         id="promptInput"
-                        placeholder="Describe the image you want to create. Be specific about style, mood, colors, and composition..."
+                        placeholder="Describe the background/scene you want your Mutant Ape in. E.g. 'cozy coffee shop with morning light' or 'Tokyo neon cityscape at night with rain reflections'..."
                     ></textarea>
                 </div>
 
                 <div class="style-presets">
-                    <h3 class="section-title">Style Presets</h3>
+                    <h3 class="section-title">Art Style</h3>
                     <div class="presets-grid">
                         <div class="preset-card selected" onclick="selectPreset(this, 'realistic')">
-                            <div class="preset-icon">&#128247;</div>
-                            <div class="preset-name">Realistic</div>
+                            <div class="preset-icon">&#127909;</div>
+                            <div class="preset-name">Cinematic 3D</div>
                         </div>
                         <div class="preset-card" onclick="selectPreset(this, 'anime')">
                             <div class="preset-icon">&#127912;</div>
                             <div class="preset-name">Anime</div>
                         </div>
-                        <div class="preset-card" onclick="selectPreset(this, 'cartoon')">
-                            <div class="preset-icon">&#128516;</div>
-                            <div class="preset-name">Cartoon</div>
+                        <div class="preset-card" onclick="selectPreset(this, 'cyberpunk')">
+                            <div class="preset-icon">&#129302;</div>
+                            <div class="preset-name">Cyberpunk</div>
                         </div>
                         <div class="preset-card" onclick="selectPreset(this, 'pixel')">
                             <div class="preset-icon">&#128126;</div>
                             <div class="preset-name">Pixel Art</div>
                         </div>
-                        <div class="preset-card" onclick="selectPreset(this, 'cyberpunk')">
-                            <div class="preset-icon">&#129302;</div>
-                            <div class="preset-name">Cyberpunk</div>
-                        </div>
                         <div class="preset-card" onclick="selectPreset(this, 'watercolor')">
                             <div class="preset-icon">&#127912;</div>
                             <div class="preset-name">Watercolor</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'oil_painting')">
+                            <div class="preset-icon">&#128444;</div>
+                            <div class="preset-name">Oil Painting</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'comic')">
+                            <div class="preset-icon">&#128165;</div>
+                            <div class="preset-name">Pop Art</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'vaporwave')">
+                            <div class="preset-icon">&#127774;</div>
+                            <div class="preset-name">Vaporwave</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'synthwave')">
+                            <div class="preset-icon">&#127752;</div>
+                            <div class="preset-name">Synthwave</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'ghibli')">
+                            <div class="preset-icon">&#127811;</div>
+                            <div class="preset-name">Ghibli</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'noir')">
+                            <div class="preset-icon">&#128373;</div>
+                            <div class="preset-name">Neon Noir</div>
+                        </div>
+                        <div class="preset-card" onclick="selectPreset(this, 'graffiti')">
+                            <div class="preset-icon">&#127480;</div>
+                            <div class="preset-name">Graffiti</div>
                         </div>
                     </div>
                 </div>
@@ -682,15 +706,25 @@
                 </button>
 
                 <div class="sample-prompts">
-                    <h3 class="section-title">Sample Prompts</h3>
+                    <h3 class="section-title">Sample Scene Prompts</h3>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Just describe the background/scene - the character description, texture, lighting, and camera effects are added automatically from the template.</div>
                     <div class="sample-prompt" onclick="usePrompt(this)">
-                        Reimagine this character in a cyberpunk neon aesthetic, with holographic elements and a futuristic city background
+                        Smoky midnight blue with subtle volumetric fog
                     </div>
                     <div class="sample-prompt" onclick="usePrompt(this)">
-                        Transform into a cozy coffee shop scene with warm morning light streaming through windows
+                        Cozy coffee shop with morning light streaming through windows
                     </div>
                     <div class="sample-prompt" onclick="usePrompt(this)">
-                        Create an anime-style version with dramatic lighting and cherry blossom petals floating in the background
+                        Tokyo neon cityscape at night with rain reflections
+                    </div>
+                    <div class="sample-prompt" onclick="usePrompt(this)">
+                        Bitcoin mining rig server room with glowing LEDs
+                    </div>
+                    <div class="sample-prompt" onclick="usePrompt(this)">
+                        Yacht club party on deck at sunset
+                    </div>
+                    <div class="sample-prompt" onclick="usePrompt(this)">
+                        Laboratory with bubbling green serum vials
                     </div>
                 </div>
             </div>
@@ -777,8 +811,8 @@
             const quality = document.getElementById('quality').value;
 
             const loadingText = uploadedImage
-                ? 'Analyzing reference image with GPT-4o, then generating with DALL-E 3...'
-                : 'Creating your image with DALL-E 3... This may take 15-30 seconds.';
+                ? 'Analyzing reference with GPT-4o, building template prompt, then generating with DALL-E 3...'
+                : 'Building prompt from template, then generating with DALL-E 3... This may take 15-30 seconds.';
             container.querySelector('.loading-text').textContent = loadingText;
 
             const requestBody = {

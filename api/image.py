@@ -5,6 +5,92 @@ import urllib.request
 import urllib.error
 
 
+# ============================================
+# KRAM's Mutant Ape - Character Reference
+# ============================================
+CHARACTER_DESCRIPTION = (
+    "KRAM's Mutant Ape character - a stylized ape with cheetah/leopard print fur "
+    "(yellow-gold base with brown spots), glowing gold coin eyes with dripping gold effect, "
+    "mint green gradient teeth in a wide grin, brown shaggy mustache/beard, "
+    "white bunny ears headpiece with cartoon faces on each ear, "
+    "and a small cheetah companion creature"
+)
+
+# ============================================
+# Prompt Components (matching prompt_template.md)
+# ============================================
+# Format: "Reimagine this character in a [ART STYLE], [TEXTURE], [LIGHTING],
+#          background: [BACKGROUND], [CAMERA/DEPTH EFFECT]."
+
+ART_STYLES = {
+    'realistic': 'hyper-realistic cinematic 3D style',
+    'anime': 'anime/manga style with bold linework',
+    'pixel': 'retro pixel art 16-bit gaming aesthetic',
+    'watercolor': 'loose watercolor painting style',
+    'oil_painting': 'classical oil painting portrait style',
+    'cyberpunk': 'cyberpunk neon aesthetic',
+    'vaporwave': 'vaporwave 80s retro style',
+    'comic': 'comic book pop art with halftone dots',
+    'low_poly': 'low-poly geometric 3D style',
+    'ukiyoe': 'ukiyo-e Japanese woodblock print style',
+    'graffiti': 'graffiti street art style',
+    'stained_glass': 'stained glass medieval art style',
+    'claymation': 'claymation stop-motion style',
+    'psychedelic': 'psychedelic 70s concert poster style',
+    'synthwave': 'synthwave retrofuturism style',
+    'ghibli': 'Studio Ghibli inspired illustration',
+    'noir': 'neon noir detective style',
+    'greek': 'ancient Greek pottery art style',
+    'art_deco': 'art deco 1920s glamour style',
+    'impressionist': 'impressionist painting style',
+}
+
+TEXTURES = [
+    'ultra-detailed fur and skin textures',
+    'smooth cel-shaded surfaces',
+    'glossy metallic chrome finish',
+    'rough painterly brushstrokes',
+    'crisp vector-clean edges',
+    'grainy vintage film texture',
+    'soft pastel gradient shading',
+    'hard geometric faceted surfaces',
+    'organic flowing liquid forms',
+    'holographic iridescent sheen',
+    'matte rubber-like finish',
+    'crystalline gem-like surfaces',
+    'weathered aged patina texture',
+    'glowing bioluminescent skin',
+]
+
+LIGHTING_OPTIONS = [
+    'dramatic rim lighting',
+    'soft golden hour warm glow',
+    'harsh neon pink and blue underglow',
+    'moody chiaroscuro deep shadows',
+    'bright flat even lighting',
+    'bioluminescent ethereal glow',
+    'sunset backlit silhouette effect',
+    'studio three-point professional lighting',
+    'warm candlelit ambiance',
+    'cold blue moonlight wash',
+    'RGB gaming setup lighting',
+    'cinematic lens flares',
+]
+
+CAMERA_EFFECTS = [
+    'shallow depth of field with bokeh',
+    'wide-angle dramatic perspective',
+    'subtle fisheye lens distortion',
+    'tilt-shift miniature effect',
+    'cinematic widescreen 2.35:1 crop',
+    'portrait orientation with blurred background',
+    'isometric three-quarter angle view',
+    'Dutch angle for dynamic tension',
+    'macro close-up on face details',
+    'symmetrical centered composition',
+]
+
+
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -49,21 +135,13 @@ class handler(BaseHTTPRequestHandler):
             # Map quality
             dall_e_quality = 'hd' if quality in ('high', 'ultra') else 'standard'
 
-            # Style descriptions
-            style_prompts = {
-                'realistic': 'Photorealistic, highly detailed, professional photography style.',
-                'anime': 'Anime art style, vibrant colors, detailed illustration, manga-inspired.',
-                'cartoon': 'Cartoon illustration style, bold outlines, vibrant colors, playful.',
-                'pixel': 'Pixel art style, retro 8-bit/16-bit aesthetic, clean pixel grid.',
-                'cyberpunk': 'Cyberpunk aesthetic, neon lights, dark atmosphere, futuristic technology, rain-slicked streets.',
-                'watercolor': 'Watercolor painting style, soft edges, flowing colors, artistic brush strokes.',
-            }
-            style_suffix = style_prompts.get(style, style_prompts['realistic'])
+            # Get the art style from our template components
+            art_style = ART_STYLES.get(style, ART_STYLES['realistic'])
 
-            # If reference image provided, use GPT-4o vision to create an enhanced prompt
+            # If reference image provided, use GPT-4o vision to build prompt in our template format
             if reference_image:
                 enhanced = self._enhance_prompt_with_vision(
-                    api_key, prompt, style_suffix, reference_image
+                    api_key, prompt, art_style, reference_image
                 )
                 if enhanced.get('error'):
                     self._send_json(500, {'success': False, 'error': enhanced['error']})
@@ -71,7 +149,8 @@ class handler(BaseHTTPRequestHandler):
                 full_prompt = enhanced['prompt']
                 vision_description = enhanced.get('description', '')
             else:
-                full_prompt = f"{prompt}. {style_suffix}"
+                # No reference image - build prompt using our template format directly
+                full_prompt = self._build_template_prompt(prompt, art_style)
                 vision_description = ''
 
             # Generate image with DALL-E 3
@@ -84,7 +163,7 @@ class handler(BaseHTTPRequestHandler):
                     'success': True,
                     'images': result['images'],
                     'revised_prompt': result.get('revised_prompt', ''),
-                    'enhanced_prompt': full_prompt if reference_image else '',
+                    'enhanced_prompt': full_prompt,
                     'vision_description': vision_description,
                 })
 
@@ -107,8 +186,29 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
-    def _enhance_prompt_with_vision(self, api_key, user_prompt, style_suffix, image_data):
-        """Use GPT-4o to analyze the reference image and create a detailed DALL-E prompt."""
+    def _build_template_prompt(self, user_scene, art_style):
+        """Build a DALL-E prompt using KRAM's exact template format.
+
+        Template: "Reimagine this character in a [ART STYLE], [TEXTURE], [LIGHTING],
+                   background: [BACKGROUND], [CAMERA/DEPTH EFFECT]."
+        """
+        # The user's prompt IS the scene/background description
+        # We build the rest from our component library
+        import random
+        texture = random.choice(TEXTURES)
+        lighting = random.choice(LIGHTING_OPTIONS)
+        camera = random.choice(CAMERA_EFFECTS)
+
+        prompt = (
+            f"{CHARACTER_DESCRIPTION}. "
+            f"Reimagine this character in a {art_style}, {texture}, {lighting}, "
+            f"background: {user_scene}, {camera}."
+        )
+        return prompt
+
+    def _enhance_prompt_with_vision(self, api_key, user_prompt, art_style, image_data):
+        """Use GPT-4o to analyze the reference image and create a DALL-E prompt
+        using KRAM's exact template format."""
         url = 'https://api.openai.com/v1/chat/completions'
 
         headers = {
@@ -116,35 +216,45 @@ class handler(BaseHTTPRequestHandler):
             'Authorization': f'Bearer {api_key}'
         }
 
-        system_msg = """You are an expert at describing images in extreme detail for image generation.
+        # GPT-4o system prompt - constrained to output in our EXACT template format
+        system_msg = f"""You are an image prompt builder for KRAM's Mutant Ape NFT character.
 
-The user uploaded a REFERENCE IMAGE. Your job is to describe the main subject/character in that image with EXTREME PRECISION so that DALL-E 3 can recreate it as accurately as possible in a new scene.
+The user will upload a REFERENCE IMAGE of their character. You MUST output a DALL-E 3 prompt that follows this EXACT template format:
 
-STEP 1: Describe the reference image subject in hyper-specific detail:
-- Exact colors (not just "blue" but "deep cobalt blue with cyan highlights")
-- Physical features, proportions, distinguishing marks
-- Clothing, accessories, textures, patterns
-- Facial expression, pose, body language
-- Any unique/distinctive elements that make this character recognizable
+TEMPLATE:
+"[CHARACTER DESCRIPTION]. Reimagine this character in a [ART STYLE], [TEXTURE DETAILS], [LIGHTING], background: [BACKGROUND DESCRIPTION], [CAMERA/DEPTH EFFECT]."
 
-STEP 2: Combine that detailed character description with the user's creative direction and style.
+KNOWN CHARACTER DETAILS (use as baseline, refine with what you see in the image):
+{CHARACTER_DESCRIPTION}
 
-STEP 3: Write a single DALL-E 3 prompt that:
-- Starts with the detailed character description so DALL-E knows EXACTLY what the subject looks like
-- Then places that character in the scene/setting the user requested
-- Applies the requested art style
-- Is under 1500 characters
+COMPONENT LIBRARIES (pick one from each, or use the user's choice):
+
+TEXTURES: {json.dumps(TEXTURES)}
+
+LIGHTING: {json.dumps(LIGHTING_OPTIONS)}
+
+CAMERA EFFECTS: {json.dumps(CAMERA_EFFECTS)}
+
+RULES:
+1. Look at the reference image to confirm/refine the character description
+2. The ART STYLE is already chosen by the user: "{art_style}"
+3. Pick the best TEXTURE, LIGHTING, and CAMERA EFFECT from the libraries above that match the user's scene request
+4. The user's text prompt describes the BACKGROUND/SCENE they want
+5. Output MUST follow the exact template format above - no extra narrative, no extra words
+6. Keep the prompt under 800 characters total
+7. Do NOT exaggerate or add elements not in the reference image
 
 Return your response in this exact JSON format:
-{"description": "2-3 sentence summary of the reference image", "prompt": "Your hyper-detailed DALL-E 3 prompt"}
+{{"description": "Brief 1-sentence description of what you see in the reference image", "prompt": "Your prompt following the exact template above"}}
 
-CRITICAL: The more specific and detailed your character description, the closer DALL-E's output will match the reference. Be obsessively detailed about the subject's appearance."""
+EXAMPLE OUTPUT:
+{{"description": "KRAM's Mutant Ape with cheetah print fur, gold coin eyes, green teeth, bunny ears headpiece, and small cheetah companion.", "prompt": "{CHARACTER_DESCRIPTION}. Reimagine this character in a {art_style}, ultra-detailed fur and skin textures, dramatic rim lighting, background: cozy coffee shop with morning light streaming through windows, shallow depth of field with bokeh."}}"""
 
         # Build the content array with text and image
         user_content = [
             {
                 "type": "text",
-                "text": f"Here is my reference image. Describe the main subject in extreme detail, then place them in this scene: {user_prompt}. Apply this style: {style_suffix}"
+                "text": f"Here is my reference image. Generate a DALL-E prompt using the exact template format. Art style: {art_style}. Scene/background I want: {user_prompt}"
             },
             {
                 "type": "image_url",
@@ -161,8 +271,8 @@ CRITICAL: The more specific and detailed your character description, the closer 
                 {'role': 'system', 'content': system_msg},
                 {'role': 'user', 'content': user_content}
             ],
-            'temperature': 0.5,
-            'max_tokens': 1000
+            'temperature': 0.3,
+            'max_tokens': 600
         }
 
         try:
@@ -187,13 +297,36 @@ CRITICAL: The more specific and detailed your character description, the closer 
 
                 try:
                     parsed = json.loads(clean)
+                    generated_prompt = parsed.get('prompt', '')
+
+                    # Fallback: if GPT didn't follow the template, build it ourselves
+                    if not generated_prompt or 'Reimagine this character' not in generated_prompt:
+                        import random
+                        texture = random.choice(TEXTURES)
+                        lighting = random.choice(LIGHTING_OPTIONS)
+                        camera = random.choice(CAMERA_EFFECTS)
+                        generated_prompt = (
+                            f"{CHARACTER_DESCRIPTION}. "
+                            f"Reimagine this character in a {art_style}, {texture}, {lighting}, "
+                            f"background: {user_prompt}, {camera}."
+                        )
+
                     return {
-                        'prompt': parsed.get('prompt', f"{user_prompt}. {style_suffix}"),
+                        'prompt': generated_prompt,
                         'description': parsed.get('description', '')
                     }
                 except json.JSONDecodeError:
-                    # If GPT didn't return valid JSON, use the raw text as the prompt
-                    return {'prompt': content, 'description': ''}
+                    # If GPT didn't return valid JSON, build template prompt ourselves
+                    import random
+                    texture = random.choice(TEXTURES)
+                    lighting = random.choice(LIGHTING_OPTIONS)
+                    camera = random.choice(CAMERA_EFFECTS)
+                    fallback_prompt = (
+                        f"{CHARACTER_DESCRIPTION}. "
+                        f"Reimagine this character in a {art_style}, {texture}, {lighting}, "
+                        f"background: {user_prompt}, {camera}."
+                    )
+                    return {'prompt': fallback_prompt, 'description': ''}
 
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8')
