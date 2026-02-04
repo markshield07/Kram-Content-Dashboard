@@ -608,7 +608,7 @@
                     <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
                     <img src="/assets/mutant-ape/mutant_ape.png" class="uploaded-image" alt="KRAM's Mutant Ape" id="referencePreview">
                     <div class="upload-text" style="margin-top: 12px;">Your Mutant Ape (auto-loaded) — click to use a different image</div>
-                    <div class="upload-hint">The server always references your Mutant Ape for GPT-4o analysis</div>
+                    <div class="upload-hint">GPT Image generates directly from this reference</div>
                 </div>
 
                 <div class="prompt-section">
@@ -784,7 +784,7 @@
             uploadArea.innerHTML = `
                 <img src="/assets/mutant-ape/mutant_ape.png" class="uploaded-image" alt="KRAM's Mutant Ape" id="referencePreview">
                 <div class="upload-text" style="margin-top: 12px;">Your Mutant Ape (auto-loaded) — click to use a different image</div>
-                <div class="upload-hint">The server always references your Mutant Ape for GPT-4o analysis</div>
+                <div class="upload-hint">GPT Image generates directly from this reference</div>
                 <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
             `;
         }
@@ -820,9 +820,9 @@
             const aspectRatio = document.getElementById('aspectRatio').value;
             const quality = document.getElementById('quality').value;
 
-            // GPT-4o always analyzes the reference image (server auto-loads Mutant Ape if none sent)
+            // gpt-image-1 sees the reference image directly and generates from it
             container.querySelector('.loading-text').textContent =
-                'Analyzing reference image with GPT-4o, building template prompt, then generating with DALL-E 3...';
+                'Generating with GPT Image (referencing your image directly)... This may take 30-60 seconds.';
 
             const requestBody = {
                 prompt: prompt,
@@ -885,7 +885,7 @@
                                     <div class="result-actions">
                                         <button class="result-btn" onclick="downloadImage(${i})">Download</button>
                                         <button class="result-btn" onclick="regenerate()">Regenerate</button>
-                                        <button class="result-btn primary" onclick="copyImageUrl(${i})">Copy URL</button>
+                                        <button class="result-btn primary" onclick="copyImageUrl(${i})">Copy Image</button>
                                     </div>
                                 </div>
                             `).join('')}
@@ -927,26 +927,56 @@
         }
 
         function downloadImage(index) {
-            const url = generatedImages[index];
-            if (!url) return;
-            // Open in new tab for download (DALL-E URLs are temporary)
-            window.open(url, '_blank');
+            const src = generatedImages[index];
+            if (!src) return;
+
+            if (src.startsWith('data:')) {
+                // Base64 data URL - create download link
+                const a = document.createElement('a');
+                a.href = src;
+                a.download = `mutant-ape-${Date.now()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                // Regular URL - open in new tab
+                window.open(src, '_blank');
+            }
         }
 
         function copyImageUrl(index) {
-            const url = generatedImages[index];
-            if (!url) return;
-            navigator.clipboard.writeText(url).then(() => {
-                const btns = document.querySelectorAll('.result-btn.primary');
-                if (btns[index]) {
-                    btns[index].textContent = 'Copied!';
-                    btns[index].style.background = 'var(--success)';
-                    setTimeout(() => {
-                        btns[index].textContent = 'Copy URL';
-                        btns[index].style.background = '';
-                    }, 2000);
-                }
-            });
+            const src = generatedImages[index];
+            if (!src) return;
+
+            // For base64, copy as a blob URL or notify user
+            if (src.startsWith('data:')) {
+                // Convert data URL to blob and copy to clipboard as image
+                fetch(src).then(res => res.blob()).then(blob => {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item]).then(() => {
+                        showCopySuccess(index, 'Image Copied!');
+                    }).catch(() => {
+                        // Fallback: just notify
+                        showCopySuccess(index, 'Use Download');
+                    });
+                });
+            } else {
+                navigator.clipboard.writeText(src).then(() => {
+                    showCopySuccess(index, 'Copied!');
+                });
+            }
+        }
+
+        function showCopySuccess(index, text) {
+            const btns = document.querySelectorAll('.result-btn.primary');
+            if (btns[index]) {
+                btns[index].textContent = text;
+                btns[index].style.background = 'var(--success)';
+                setTimeout(() => {
+                    btns[index].textContent = 'Copy Image';
+                    btns[index].style.background = '';
+                }, 2000);
+            }
         }
 
         function regenerate() {
