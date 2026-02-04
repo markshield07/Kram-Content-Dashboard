@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Generator - ContentAI</title>
+    <script src="/theme.js"></script>
     <style>
         :root {
             --bg-primary: #0d0d0d;
@@ -556,6 +557,13 @@
                 </svg>
                 A/B Testing
             </a>
+            <a href="/reply-bot" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <path d="M8 10h.01"></path><path d="M12 10h.01"></path><path d="M16 10h.01"></path>
+                </svg>
+                Reply Bot
+            </a>
             <a href="/trends" class="nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -598,6 +606,9 @@
     <main class="main-content">
         <header class="top-header">
             <h1 class="page-title">Image Generator</h1>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;transition:all 0.2s;"></button>
+            </div>
         </header>
 
         <div class="content-layout">
@@ -687,8 +698,8 @@
                     <div class="option-group">
                         <div class="option-label">Quality</div>
                         <select class="option-select" id="quality">
-                            <option value="standard">Standard</option>
-                            <option value="high" selected>High</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="high">High</option>
                             <option value="ultra">Ultra HD</option>
                         </select>
                     </div>

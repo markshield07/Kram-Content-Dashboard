@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A/B Testing - ContentAI</title>
+    <script src="/theme.js"></script>
     <style>
         :root {
             --bg-primary: #0d0d0d;
@@ -211,6 +212,7 @@
         <div class="nav-section">
             <div class="nav-section-title">Tools</div>
             <a href="/ab-testing" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>A/B Testing</a>
+            <a href="/reply-bot" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 10h.01"></path><path d="M12 10h.01"></path><path d="M16 10h.01"></path></svg>Reply Bot</a>
             <a href="/trends" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Trends</a>
             <a href="/competitors" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Competitors</a>
         </div>
@@ -224,10 +226,13 @@
     <main class="main-content">
         <header class="top-header">
             <h1 class="page-title">A/B Testing</h1>
-            <button class="btn btn-primary" onclick="scrollToCreate()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                New Test
-            </button>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;transition:all 0.2s;"></button>
+                <button class="btn btn-primary" onclick="scrollToCreate()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    New Test
+                </button>
+            </div>
         </header>
 
         <div class="content-area">

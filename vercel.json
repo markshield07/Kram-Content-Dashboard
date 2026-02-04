@@ -12,6 +12,7 @@
     { "source": "/images", "destination": "/images.html" },
     { "source": "/calendar", "destination": "/calendar.html" },
     { "source": "/ab-testing", "destination": "/ab-testing.html" },
+    { "source": "/reply-bot", "destination": "/reply-bot.html" },
     { "source": "/trends", "destination": "/trends.html" },
     { "source": "/competitors", "destination": "/competitors.html" },
     { "source": "/settings", "destination": "/settings.html" },

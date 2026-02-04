@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reply Bot - ContentAI</title>
+    <script src="/theme.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #141414;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #f7931a;
+            --accent-hover: #ffa726;
+            --border: #2a2a2a;
+            --success: #34c759;
+            --error: #ff3b30;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .sidebar-logo h1 { font-size: 24px; font-weight: 700; }
+        .sidebar-logo h1 span { color: var(--accent); }
+
+        .nav-section { padding: 0 12px; margin-bottom: 24px; }
+        .nav-section-title { font-size: 11px; text-transform: uppercase; color: var(--text-secondary); padding: 0 8px; margin-bottom: 8px; }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            border-radius: 8px; color: var(--text-secondary); text-decoration: none;
+            transition: all 0.2s; font-size: 14px;
+        }
+        .nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+        .nav-item.active { background: rgba(247, 147, 26, 0.1); color: var(--accent); }
+        .nav-item svg { width: 20px; height: 20px; }
+
+        .main-content { flex: 1; margin-left: 250px; }
+
+        .top-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px 30px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);
+        }
+        .page-title { font-size: 24px; font-weight: 600; }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .status-indicator {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+        }
+        .status-indicator.active { background: rgba(52, 199, 89, 0.15); color: var(--success); }
+        .status-indicator.inactive { background: rgba(255, 59, 48, 0.15); color: var(--error); }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .status-indicator.active .status-dot { background: var(--success); animation: pulse 2s infinite; }
+        .status-indicator.inactive .status-dot { background: var(--error); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .content-area { padding: 30px; }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; text-align: center;
+        }
+        .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .stat-label { font-size: 13px; color: var(--text-secondary); }
+
+        /* Master Toggle */
+        .master-toggle-section {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .master-toggle-info { display: flex; align-items: center; gap: 16px; }
+        .master-toggle-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(247, 147, 26, 0.1);
+        }
+        .master-toggle-icon svg { width: 24px; height: 24px; color: var(--accent); }
+        .master-toggle-text h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .master-toggle-text p { font-size: 13px; color: var(--text-secondary); }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative; width: 56px; height: 30px; flex-shrink: 0;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--border); border-radius: 30px; transition: 0.3s;
+        }
+        .toggle-slider::before {
+            content: ''; position: absolute; height: 24px; width: 24px;
+            left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;
+        }
+        .toggle-switch input:checked + .toggle-slider { background: var(--success); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(26px); }
+        .toggle-switch input:disabled + .toggle-slider { opacity: 0.4; cursor: not-allowed; }
+
+        .toggle-switch.large { width: 64px; height: 34px; }
+        .toggle-switch.large .toggle-slider::before { height: 28px; width: 28px; }
+        .toggle-switch.large input:checked + .toggle-slider::before { transform: translateX(30px); }
+
+        /* Settings Panels */
+        .settings-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;
+        }
+
+        .settings-panel {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; transition: opacity 0.3s;
+        }
+        .settings-panel.disabled { opacity: 0.4; pointer-events: none; }
+
+        .panel-header {
+            padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .panel-title { font-size: 16px; font-weight: 600; }
+
+        .panel-body { padding: 20px; }
+
+        /* GM Templates */
+        .gm-description {
+            font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;
+        }
+        .gm-description code {
+            background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px;
+            font-size: 12px; color: var(--accent);
+        }
+
+        .template-chips {
+            display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
+        }
+        .template-chip {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; font-size: 14px;
+            transition: all 0.2s;
+        }
+        .template-chip.disabled { opacity: 0.4; }
+        .template-chip .chip-text { color: var(--text-primary); }
+        .template-chip .toggle-switch { width: 40px; height: 22px; }
+        .template-chip .toggle-switch .toggle-slider::before {
+            height: 16px; width: 16px;
+        }
+        .template-chip .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
+
+        /* General Settings */
+        .setting-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+        }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-info { flex: 1; }
+        .setting-label { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .setting-desc { font-size: 12px; color: var(--text-secondary); }
+
+        .setting-control { flex-shrink: 0; margin-left: 16px; }
+
+        .form-select {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 8px 12px; color: var(--text-primary);
+            font-size: 13px; cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            padding-right: 30px;
+        }
+        .form-select:focus { outline: none; border-color: var(--accent); }
+
+        .time-range {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .time-input {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 8px 12px; color: var(--text-primary);
+            font-size: 13px; width: 100px;
+        }
+        .time-input:focus { outline: none; border-color: var(--accent); }
+        .time-separator { color: var(--text-secondary); font-size: 13px; }
+
+        .locked-badge {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary);
+            padding: 4px 10px; border-radius: 12px;
+        }
+        .locked-badge svg { width: 12px; height: 12px; }
+
+        /* Reply Templates Section */
+        .templates-section {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; margin-bottom: 24px; transition: opacity 0.3s;
+        }
+        .templates-section.disabled { opacity: 0.4; pointer-events: none; }
+
+        .template-list { padding: 20px; }
+
+        .template-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 14px 16px; background: var(--bg-secondary); border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .template-item:last-child { margin-bottom: 0; }
+
+        .template-content { flex: 1; }
+        .template-text { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+        .template-preview { font-size: 12px; color: var(--text-secondary); }
+
+        .template-tag {
+            font-size: 11px; padding: 3px 8px; border-radius: 6px;
+            background: rgba(247, 147, 26, 0.15); color: var(--accent);
+        }
+
+        .add-template-row {
+            display: flex; gap: 12px; padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .add-template-input {
+            flex: 1; background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; color: var(--text-primary);
+            font-size: 14px; font-family: inherit;
+        }
+        .add-template-input:focus { outline: none; border-color: var(--accent); }
+        .add-template-input::placeholder { color: #555; }
+
+        .btn {
+            padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-sm { padding: 8px 14px; font-size: 13px; }
+        .btn svg { width: 18px; height: 18px; }
+
+        /* Activity Feed */
+        .activity-section {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+            overflow: hidden; transition: opacity 0.3s;
+        }
+        .activity-section.disabled { opacity: 0.4; pointer-events: none; }
+
+        .activity-list { padding: 20px; }
+
+        .activity-item {
+            display: flex; gap: 16px; padding: 16px;
+            background: var(--bg-secondary); border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .activity-item:last-child { margin-bottom: 0; }
+
+        .activity-avatar {
+            width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent), #e65c00);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; color: #000;
+        }
+
+        .activity-content { flex: 1; min-width: 0; }
+
+        .activity-author {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+        }
+        .author-name { font-size: 14px; font-weight: 600; }
+        .author-handle { font-size: 13px; color: var(--text-secondary); }
+        .verified-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px;
+        }
+        .verified-badge svg { width: 16px; height: 16px; }
+
+        .activity-original {
+            font-size: 13px; color: var(--text-secondary); line-height: 1.5;
+            margin-bottom: 10px; padding: 10px 12px;
+            background: var(--bg-card); border-radius: 8px;
+            border-left: 3px solid var(--border);
+        }
+
+        .activity-reply {
+            font-size: 14px; line-height: 1.5; margin-bottom: 8px;
+            padding: 10px 12px; background: rgba(247, 147, 26, 0.06);
+            border-radius: 8px; border-left: 3px solid var(--accent);
+        }
+        .reply-label { font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+
+        .activity-time { font-size: 12px; color: var(--text-secondary); }
+
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+
+        @media (max-width: 1024px) {
+            .settings-grid { grid-template-columns: 1fr; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .stats-bar { grid-template-columns: 1fr 1fr; }
+            .master-toggle-section { flex-direction: column; gap: 16px; text-align: center; }
+            .master-toggle-info { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-logo"><h1>Content<span>AI</span></h1></div>
+        <div class="nav-section">
+            <a href="/dashboard" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Dashboard</a>
+            <a href="/analytics" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>Analytics</a>
+            <a href="/generate" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>Generate Content</a>
+            <a href="/images" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>Image Generator</a>
+            <a href="/calendar" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Calendar</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Tools</div>
+            <a href="/ab-testing" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>A/B Testing</a>
+            <a href="/reply-bot" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Reply Bot</a>
+            <a href="/trends" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Trends</a>
+            <a href="/competitors" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Competitors</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Account</div>
+            <a href="/settings" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle></svg>Settings</a>
+            <a href="/api/logout" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <h1 class="page-title">Reply Bot</h1>
+                <div class="status-indicator active" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Bot Active</span>
+                </div>
+            </div>
+            <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;transition:all 0.2s;"></button>
+        </header>
+
+        <div class="content-area">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-value" id="statRepliesToday">24</div>
+                    <div class="stat-label">Replies Today</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statRepliesWeek">156</div>
+                    <div class="stat-label">Replies This Week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statAccountsEngaged">89</div>
+                    <div class="stat-label">Accounts Engaged</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statSuccessRate">98%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+
+            <!-- Master Toggle -->
+            <div class="master-toggle-section">
+                <div class="master-toggle-info">
+                    <div class="master-toggle-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"></path><rect x="3" y="8" width="18" height="14" rx="2"></rect><circle cx="12" cy="16" r="2"></circle></svg>
+                    </div>
+                    <div class="master-toggle-text">
+                        <h3 id="masterToggleTitle">Reply Bot is Active</h3>
+                        <p id="masterToggleDesc">Automatically replying to verified accounts</p>
+                    </div>
+                </div>
+                <label class="toggle-switch large">
+                    <input type="checkbox" id="masterToggle" checked onchange="handleMasterToggle()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- Settings Grid -->
+            <div class="settings-grid">
+                <!-- GM Reply Panel -->
+                <div class="settings-panel" id="gmPanel">
+                    <div class="panel-header">
+                        <span class="panel-title">GM Replies</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="gmToggle" checked onchange="handleGmToggle()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="panel-body">
+                        <p class="gm-description">
+                            Automatically reply to good morning posts from verified accounts. Use <code>{NAME}</code> to include the poster's X display name in your reply.
+                        </p>
+                        <div class="template-chips" id="gmChips">
+                            <div class="template-chip" data-template="gm-name">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="handleChipToggle(this)" data-key="gm_name">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="chip-text">GM {NAME}</span>
+                            </div>
+                            <div class="template-chip" data-template="morning-name">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="handleChipToggle(this)" data-key="morning_name">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="chip-text">Morning {NAME}</span>
+                            </div>
+                            <div class="template-chip" data-template="gmgm-name">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="handleChipToggle(this)" data-key="gmgm_name">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="chip-text">Gmgm {NAME}</span>
+                            </div>
+                            <div class="template-chip" data-template="gm-plain">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="handleChipToggle(this)" data-key="gm_plain">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="chip-text">GM</span>
+                            </div>
+                            <div class="template-chip" data-template="gm-lower">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="handleChipToggle(this)" data-key="gm_lower">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="chip-text">Gm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General Reply Settings Panel -->
+                <div class="settings-panel" id="generalPanel">
+                    <div class="panel-header">
+                        <span class="panel-title">General Settings</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Verified Accounts Only</div>
+                                <div class="setting-desc">Only reply to verified (blue check) accounts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="locked-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Always On
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Reply Frequency</div>
+                                <div class="setting-desc">How often the bot should reply</div>
+                            </div>
+                            <div class="setting-control">
+                                <select class="form-select" id="replyFrequency" onchange="saveSettings()">
+                                    <option value="every">Every post</option>
+                                    <option value="every_other">Every other post</option>
+                                    <option value="3_5_per_hour" selected>3-5 per hour</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <div class="setting-label">Active Hours</div>
+                                <div class="setting-desc">Time range when the bot is active</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="time-range">
+                                    <input type="time" class="time-input" id="activeStart" value="07:00" onchange="saveSettings()">
+                                    <span class="time-separator">to</span>
+                                    <input type="time" class="time-input" id="activeEnd" value="23:00" onchange="saveSettings()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reply Templates Section -->
+            <div class="templates-section" id="templatesSection">
+                <div class="panel-header">
+                    <span class="panel-title">Reply Templates</span>
+                    <span class="template-tag" id="templateCount">5 active</span>
+                </div>
+                <div class="template-list" id="templateList">
+                    <div class="template-item" data-template-id="1">
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked onchange="handleTemplateToggle(this)" data-key="tpl_1">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="template-content">
+                            <div class="template-text">GM {NAME}</div>
+                            <div class="template-preview">Example: "GM Vitalik"</div>
+                        </div>
+                        <span class="template-tag">GM</span>
+                    </div>
+                    <div class="template-item" data-template-id="2">
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked onchange="handleTemplateToggle(this)" data-key="tpl_2">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="template-content">
+                            <div class="template-text">Morning {NAME}</div>
+                            <div class="template-preview">Example: "Morning Elon"</div>
+                        </div>
+                        <span class="template-tag">GM</span>
+                    </div>
+                    <div class="template-item" data-template-id="3">
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked onchange="handleTemplateToggle(this)" data-key="tpl_3">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="template-content">
+                            <div class="template-text">Gmgm {NAME}</div>
+                            <div class="template-preview">Example: "Gmgm Punk6529"</div>
+                        </div>
+                        <span class="template-tag">GM</span>
+                    </div>
+                    <div class="template-item" data-template-id="4">
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked onchange="handleTemplateToggle(this)" data-key="tpl_4">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="template-content">
+                            <div class="template-text">GM</div>
+                            <div class="template-preview">Example: "GM"</div>
+                        </div>
+                        <span class="template-tag">GM</span>
+                    </div>
+                    <div class="template-item" data-template-id="5">
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked onchange="handleTemplateToggle(this)" data-key="tpl_5">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <div class="template-content">
+                            <div class="template-text">Gm</div>
+                            <div class="template-preview">Example: "Gm"</div>
+                        </div>
+                        <span class="template-tag">GM</span>
+                    </div>
+                </div>
+                <div class="add-template-row">
+                    <input type="text" class="add-template-input" id="newTemplateInput" placeholder="Add a custom template... use {NAME} for the poster's display name">
+                    <button class="btn btn-primary btn-sm" onclick="addCustomTemplate()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="activity-section" id="activitySection">
+                <div class="panel-header">
+                    <span class="panel-title">Recent Reply Activity</span>
+                    <span class="template-tag" id="activityCount">4 replies today</span>
+                </div>
+                <div class="activity-list" id="activityFeed">
+                    <!-- Activity items populated by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Mock activity data
+        const mockActivities = [
+            {
+                initials: 'VB',
+                name: 'vitalik.eth',
+                handle: '@VitalikButerin',
+                original: 'GM everyone. Beautiful morning to work on Ethereum scaling solutions.',
+                reply: 'GM Vitalik',
+                time: '2 minutes ago'
+            },
+            {
+                initials: 'CB',
+                name: 'Cobie',
+                handle: '@coaboroFAT',
+                original: 'gm gm. who is building today?',
+                reply: 'Morning Cobie',
+                time: '18 minutes ago'
+            },
+            {
+                initials: 'PG',
+                name: 'Punk6529',
+                handle: '@punk6529',
+                original: 'GM. Remember: the best time to build was yesterday. The second best time is now.',
+                reply: 'Gmgm Punk6529',
+                time: '45 minutes ago'
+            },
+            {
+                initials: 'GV',
+                name: 'Gary Vee',
+                handle: '@garyvee',
+                original: 'GM! Hope everyone is having an amazing morning. Go crush it today!',
+                reply: 'GM Gary Vee',
+                time: '1 hour ago'
+            }
+        ];
+
+        // Default settings
+        const defaultSettings = {
+            masterToggle: true,
+            gmToggle: true,
+            gm_name: true,
+            morning_name: true,
+            gmgm_name: true,
+            gm_plain: true,
+            gm_lower: true,
+            replyFrequency: '3_5_per_hour',
+            activeStart: '07:00',
+            activeEnd: '23:00',
+            tpl_1: true,
+            tpl_2: true,
+            tpl_3: true,
+            tpl_4: true,
+            tpl_5: true,
+            customTemplates: []
+        };
+
+        let settings = {};
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const saved = localStorage.getItem('replyBotSettings');
+            if (saved) {
+                try {
+                    settings = { ...defaultSettings, ...JSON.parse(saved) };
+                } catch (e) {
+                    settings = { ...defaultSettings };
+                }
+            } else {
+                settings = { ...defaultSettings };
+            }
+            applySettings();
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            settings.replyFrequency = document.getElementById('replyFrequency').value;
+            settings.activeStart = document.getElementById('activeStart').value;
+            settings.activeEnd = document.getElementById('activeEnd').value;
+            localStorage.setItem('replyBotSettings', JSON.stringify(settings));
+        }
+
+        // Apply settings to the UI
+        function applySettings() {
+            document.getElementById('masterToggle').checked = settings.masterToggle;
+            document.getElementById('gmToggle').checked = settings.gmToggle;
+            document.getElementById('replyFrequency').value = settings.replyFrequency;
+            document.getElementById('activeStart').value = settings.activeStart;
+            document.getElementById('activeEnd').value = settings.activeEnd;
+
+            // Apply chip toggles
+            document.querySelectorAll('.template-chip input[type="checkbox"]').forEach(input => {
+                const key = input.dataset.key;
+                if (key && settings[key] !== undefined) {
+                    input.checked = settings[key];
+                }
+            });
+
+            // Apply template toggles
+            document.querySelectorAll('.template-item input[type="checkbox"]').forEach(input => {
+                const key = input.dataset.key;
+                if (key && settings[key] !== undefined) {
+                    input.checked = settings[key];
+                }
+            });
+
+            // Load custom templates
+            if (settings.customTemplates && settings.customTemplates.length > 0) {
+                settings.customTemplates.forEach(tpl => {
+                    addTemplateToDOM(tpl.text, tpl.enabled, tpl.id);
+                });
+            }
+
+            // Apply master toggle state
+            updateMasterToggleUI(settings.masterToggle);
+            updateGmToggleUI(settings.gmToggle);
+            updateTemplateCount();
+        }
+
+        // Master toggle handler
+        function handleMasterToggle() {
+            const isActive = document.getElementById('masterToggle').checked;
+            settings.masterToggle = isActive;
+            updateMasterToggleUI(isActive);
+            saveSettings();
+        }
+
+        function updateMasterToggleUI(isActive) {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const title = document.getElementById('masterToggleTitle');
+            const desc = document.getElementById('masterToggleDesc');
+
+            if (isActive) {
+                statusIndicator.className = 'status-indicator active';
+                statusText.textContent = 'Bot Active';
+                title.textContent = 'Reply Bot is Active';
+                desc.textContent = 'Automatically replying to verified accounts';
+            } else {
+                statusIndicator.className = 'status-indicator inactive';
+                statusText.textContent = 'Bot Inactive';
+                title.textContent = 'Reply Bot is Paused';
+                desc.textContent = 'Enable the bot to start replying automatically';
+            }
+
+            // Enable/disable all panels
+            const panels = ['gmPanel', 'generalPanel', 'templatesSection', 'activitySection'];
+            panels.forEach(id => {
+                const el = document.getElementById(id);
+                if (isActive) {
+                    el.classList.remove('disabled');
+                } else {
+                    el.classList.add('disabled');
+                }
+            });
+        }
+
+        // GM toggle handler
+        function handleGmToggle() {
+            const isEnabled = document.getElementById('gmToggle').checked;
+            settings.gmToggle = isEnabled;
+            updateGmToggleUI(isEnabled);
+            saveSettings();
+        }
+
+        function updateGmToggleUI(isEnabled) {
+            const chips = document.querySelectorAll('.template-chip');
+            chips.forEach(chip => {
+                if (isEnabled) {
+                    chip.classList.remove('disabled');
+                    chip.querySelector('input').disabled = false;
+                } else {
+                    chip.classList.add('disabled');
+                    chip.querySelector('input').disabled = true;
+                }
+            });
+        }
+
+        // Chip toggle handler
+        function handleChipToggle(input) {
+            const key = input.dataset.key;
+            settings[key] = input.checked;
+            saveSettings();
+            updateTemplateCount();
+        }
+
+        // Template toggle handler
+        function handleTemplateToggle(input) {
+            const key = input.dataset.key;
+            settings[key] = input.checked;
+            saveSettings();
+            updateTemplateCount();
+        }
+
+        // Update template count
+        function updateTemplateCount() {
+            const allToggles = document.querySelectorAll('.template-item input[type="checkbox"]');
+            let active = 0;
+            allToggles.forEach(t => { if (t.checked) active++; });
+            document.getElementById('templateCount').textContent = active + ' active';
+        }
+
+        // Add custom template
+        let customTemplateCounter = 100;
+
+        function addCustomTemplate() {
+            const input = document.getElementById('newTemplateInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const id = 'custom_' + (++customTemplateCounter);
+            addTemplateToDOM(text, true, id);
+
+            // Save to settings
+            if (!settings.customTemplates) settings.customTemplates = [];
+            settings.customTemplates.push({ text: text, enabled: true, id: id });
+            settings[id] = true;
+            saveSettings();
+            updateTemplateCount();
+
+            input.value = '';
+        }
+
+        function addTemplateToDOM(text, enabled, id) {
+            const list = document.getElementById('templateList');
+            const item = document.createElement('div');
+            item.className = 'template-item';
+            item.dataset.templateId = id;
+
+            const preview = text.replace('{NAME}', 'Username');
+
+            item.innerHTML = `
+                <label class="toggle-switch">
+                    <input type="checkbox" ${enabled ? 'checked' : ''} onchange="handleTemplateToggle(this)" data-key="${id}">
+                    <span class="toggle-slider"></span>
+                </label>
+                <div class="template-content">
+                    <div class="template-text">${escapeHTML(text)}</div>
+                    <div class="template-preview">Example: "${escapeHTML(preview)}"</div>
+                </div>
+                <span class="template-tag">Custom</span>
+            `;
+
+            list.appendChild(item);
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Render activity feed
+        function renderActivityFeed() {
+            const feed = document.getElementById('activityFeed');
+            feed.innerHTML = mockActivities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-avatar">${activity.initials}</div>
+                    <div class="activity-content">
+                        <div class="activity-author">
+                            <span class="author-name">${escapeHTML(activity.name)}</span>
+                            <span class="verified-badge">
+                                <svg viewBox="0 0 24 24" fill="#1d9bf0" stroke="none"><path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81C14.67 2.88 13.43 2 12 2s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91C2.88 9.33 2 10.57 2 12s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81C9.33 21.12 10.57 22 12 22s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91C21.12 14.67 22 13.43 22 12zm-11.07 4.83l-3.43-3.43 1.06-1.06 2.37 2.37 4.69-4.69 1.06 1.06-5.75 5.75z"></path></svg>
+                            </span>
+                            <span class="author-handle">${escapeHTML(activity.handle)}</span>
+                        </div>
+                        <div class="activity-original">${escapeHTML(activity.original)}</div>
+                        <div class="activity-reply">
+                            <div class="reply-label">YOUR REPLY</div>
+                            ${escapeHTML(activity.reply)}
+                        </div>
+                        <div class="activity-time">${escapeHTML(activity.time)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Allow Enter key to add template
+        document.getElementById('newTemplateInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addCustomTemplate();
+            }
+        });
+
+        // Initialize
+        loadSettings();
+        renderActivityFeed();
+    </script>
+</body>
+</html>

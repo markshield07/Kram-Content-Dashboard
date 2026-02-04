@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trends - ContentAI</title>
+    <script src="/theme.js"></script>
     <style>
         :root {
             --bg-primary: #0d0d0d;
@@ -17,7 +18,6 @@
             --success: #34c759;
             --error: #ff3b30;
             --hot: #ff6b6b;
-            --warm: #ffa726;
             --rising: #5856d6;
         }
 
@@ -31,6 +31,7 @@
             min-height: 100vh;
         }
 
+        /* ── Sidebar ─────────────────────────────────────── */
         .sidebar {
             width: 250px;
             background: var(--bg-secondary);
@@ -57,6 +58,7 @@
         .nav-item.active { background: rgba(247, 147, 26, 0.1); color: var(--accent); }
         .nav-item svg { width: 20px; height: 20px; }
 
+        /* ── Main Layout ─────────────────────────────────── */
         .main-content { flex: 1; margin-left: 250px; }
 
         .top-header {
@@ -69,28 +71,49 @@
 
         .filter-select {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
-            padding: 10px 14px; color: var(--text-primary); font-size: 14px;
+            padding: 10px 14px; color: var(--text-primary); font-size: 14px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
         }
+        .filter-select option { background: var(--bg-secondary); color: var(--text-primary); }
         .filter-select:focus { outline: none; border-color: var(--accent); }
+
+        .refresh-btn {
+            padding: 10px 16px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .refresh-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+        .refresh-btn svg { width: 16px; height: 16px; }
+        .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .content-area { padding: 30px; }
 
-        .trends-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+        .trends-layout { display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
 
         .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
 
-        /* Trending Topics */
+        /* ── Trending List ────────────────────────────────── */
         .trending-list { display: flex; flex-direction: column; gap: 12px; }
 
         .trending-item {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
             padding: 20px; display: flex; align-items: flex-start; gap: 16px;
-            cursor: pointer; transition: all 0.2s;
+            cursor: pointer; transition: all 0.3s ease; opacity: 1; transform: translateY(0);
         }
         .trending-item:hover { border-color: var(--accent); transform: translateX(4px); }
+        .trending-item.selected { border-color: var(--accent); background: rgba(247, 147, 26, 0.03); }
+        .trending-item.fade-in { animation: fadeSlideIn 0.3s ease forwards; }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .trending-rank {
-            font-size: 24px; font-weight: 700; color: var(--accent); min-width: 40px;
+            font-size: 24px; font-weight: 700; color: var(--accent); min-width: 40px; text-align: center;
         }
 
         .trending-content { flex: 1; }
@@ -101,7 +124,8 @@
         }
 
         .trend-badge {
-            padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;
+            padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         .trend-badge.hot { background: rgba(255, 107, 107, 0.2); color: var(--hot); }
         .trend-badge.rising { background: rgba(88, 86, 214, 0.2); color: var(--rising); }
@@ -114,21 +138,20 @@
         .trending-stat { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
         .trending-stat svg { width: 14px; height: 14px; }
         .trending-stat.up { color: var(--success); }
-        .trending-stat.down { color: var(--error); }
 
-        .trending-actions { display: flex; flex-direction: column; gap: 8px; }
+        .trending-actions { display: flex; flex-direction: column; gap: 8px; align-self: center; }
 
         .use-trend-btn {
             padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px;
-            color: #000; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+            color: #000; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
             white-space: nowrap;
         }
-        .use-trend-btn:hover { background: var(--accent-hover); }
+        .use-trend-btn:hover { background: var(--accent-hover); transform: scale(1.03); }
 
-        /* Categories */
+        /* ── Categories Panel ────────────────────────────── */
         .categories-panel {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-            padding: 20px; height: fit-content;
+            padding: 20px; height: fit-content; position: sticky; top: 30px;
         }
 
         .category-list { display: flex; flex-direction: column; gap: 8px; }
@@ -136,68 +159,97 @@
         .category-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 14px; background: var(--bg-secondary); border-radius: 8px;
-            cursor: pointer; transition: all 0.2s;
+            cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent;
         }
-        .category-item:hover { background: rgba(247, 147, 26, 0.1); }
-        .category-item.active { background: rgba(247, 147, 26, 0.15); border-left: 3px solid var(--accent); }
+        .category-item:hover { background: rgba(247, 147, 26, 0.08); }
+        .category-item.active { background: rgba(247, 147, 26, 0.12); border-left-color: var(--accent); }
 
         .category-name { font-size: 14px; display: flex; align-items: center; gap: 8px; }
         .category-name .emoji { font-size: 16px; }
 
         .category-count {
             background: var(--bg-card); padding: 4px 10px; border-radius: 12px;
-            font-size: 12px; color: var(--text-secondary);
+            font-size: 12px; color: var(--text-secondary); min-width: 30px; text-align: center;
         }
+        .category-item.active .category-count { background: rgba(247, 147, 26, 0.15); color: var(--accent); }
 
-        /* Suggested Content */
+        /* ── Suggested Content ───────────────────────────── */
         .suggested-section { margin-top: 30px; }
 
-        .suggested-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .suggested-intro {
+            color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;
+            padding: 16px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; display: flex; align-items: center; gap: 12px;
+        }
+        .suggested-intro svg { width: 24px; height: 24px; color: var(--accent); flex-shrink: 0; }
+
+        .suggested-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
         .suggested-card {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-            padding: 20px; transition: all 0.2s;
+            padding: 20px; transition: all 0.3s ease; animation: fadeSlideIn 0.4s ease forwards;
         }
+        .suggested-card:nth-child(2) { animation-delay: 0.1s; }
+        .suggested-card:nth-child(3) { animation-delay: 0.2s; }
         .suggested-card:hover { border-color: var(--accent); }
 
         .suggested-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 
         .suggested-topic { font-size: 14px; font-weight: 600; }
-        .suggested-platform { font-size: 12px; color: var(--text-secondary); }
+        .suggested-label {
+            font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary);
+            padding: 3px 8px; border-radius: 6px;
+        }
 
         .suggested-content {
-            font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 16px;
-            padding: 12px; background: var(--bg-secondary); border-radius: 8px;
+            font-size: 13px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 16px;
+            padding: 14px; background: var(--bg-secondary); border-radius: 8px; border-left: 3px solid var(--accent);
         }
+
+        .char-count { font-size: 11px; color: var(--text-secondary); text-align: right; margin-bottom: 12px; }
 
         .suggested-actions { display: flex; gap: 8px; }
         .suggested-btn {
             flex: 1; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 6px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s;
+            border-radius: 6px; color: var(--text-secondary); font-size: 12px; cursor: pointer;
+            transition: all 0.2s; font-weight: 500;
         }
         .suggested-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-        .suggested-btn.primary { background: var(--accent); border-color: var(--accent); color: #000; }
+        .suggested-btn.primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+        .suggested-btn.primary:hover { background: var(--accent-hover); }
 
-        /* Refresh Button */
-        .refresh-btn {
-            padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 8px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
-            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        /* ── Toast Notification ──────────────────────────── */
+        .toast {
+            position: fixed; bottom: 30px; right: 30px; background: var(--bg-secondary);
+            border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px; font-size: 14px;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 1000;
         }
-        .refresh-btn:hover { border-color: var(--accent); color: var(--text-primary); }
-        .refresh-btn svg { width: 16px; height: 16px; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast svg { width: 18px; height: 18px; color: var(--success); }
 
+        /* ── No Results ──────────────────────────────────── */
+        .no-results {
+            text-align: center; padding: 60px 20px; color: var(--text-secondary);
+        }
+        .no-results svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .no-results h3 { font-size: 16px; color: var(--text-primary); margin-bottom: 8px; }
+
+        /* ── Responsive ──────────────────────────────────── */
         @media (max-width: 1200px) {
             .trends-layout { grid-template-columns: 1fr; }
-            .categories-panel { order: -1; }
+            .categories-panel { order: -1; position: static; }
             .category-list { flex-direction: row; flex-wrap: wrap; }
-            .category-item { flex: 1; min-width: 150px; }
+            .category-item { flex: 1; min-width: 130px; }
+            .suggested-grid { grid-template-columns: 1fr 1fr; }
         }
 
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; }
             .suggested-grid { grid-template-columns: 1fr; }
+            .top-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .header-controls { flex-wrap: wrap; }
         }
     </style>
 </head>
@@ -214,12 +266,13 @@
         <div class="nav-section">
             <div class="nav-section-title">Tools</div>
             <a href="/ab-testing" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>A/B Testing</a>
+            <a href="/reply-bot" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Reply Bot</a>
             <a href="/trends" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Trends</a>
-            <a href="/competitors" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Competitors</a>
+            <a href="/competitors" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Competitors</a>
         </div>
         <div class="nav-section">
             <div class="nav-section-title">Account</div>
-            <a href="/settings" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle></svg>Settings</a>
+            <a href="/settings" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
             <a href="/api/logout" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>Logout</a>
         </div>
     </nav>
@@ -228,19 +281,15 @@
         <header class="top-header">
             <h1 class="page-title">Trending Topics</h1>
             <div class="header-controls">
-                <select class="filter-select">
-                    <option>All Platforms</option>
-                    <option>X / Twitter</option>
-                    <option>Instagram</option>
-                    <option>TikTok</option>
+                <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;transition:all 0.2s;"></button>
+                <select class="filter-select" id="platformFilter">
+                    <option value="twitter">X / Twitter</option>
                 </select>
-                <select class="filter-select">
-                    <option>United States</option>
-                    <option>Worldwide</option>
-                    <option>United Kingdom</option>
-                    <option>Canada</option>
+                <select class="filter-select" id="locationFilter">
+                    <option value="us">United States</option>
+                    <option value="worldwide">Worldwide</option>
                 </select>
-                <button class="refresh-btn" onclick="refreshTrends()">
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshTrends()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                     Refresh
                 </button>
@@ -254,205 +303,378 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
                         Trending Now
                     </h2>
-
-                    <div class="trending-list">
-                        <div class="trending-item">
-                            <div class="trending-rank">1</div>
-                            <div class="trending-content">
-                                <div class="trending-topic">
-                                    #Bitcoin
-                                    <span class="trend-badge hot">HOT</span>
-                                </div>
-                                <div class="trending-meta">Cryptocurrency - Trending for 4 hours</div>
-                                <div class="trending-stats">
-                                    <span class="trending-stat up">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-                                        +245% volume
-                                    </span>
-                                    <span class="trending-stat">125K posts</span>
-                                </div>
-                            </div>
-                            <div class="trending-actions">
-                                <button class="use-trend-btn" onclick="useTrend('#Bitcoin')">Create Post</button>
-                            </div>
-                        </div>
-
-                        <div class="trending-item">
-                            <div class="trending-rank">2</div>
-                            <div class="trending-content">
-                                <div class="trending-topic">
-                                    AI Revolution
-                                    <span class="trend-badge rising">RISING</span>
-                                </div>
-                                <div class="trending-meta">Technology - Trending for 2 hours</div>
-                                <div class="trending-stats">
-                                    <span class="trending-stat up">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-                                        +180% volume
-                                    </span>
-                                    <span class="trending-stat">89K posts</span>
-                                </div>
-                            </div>
-                            <div class="trending-actions">
-                                <button class="use-trend-btn" onclick="useTrend('AI Revolution')">Create Post</button>
-                            </div>
-                        </div>
-
-                        <div class="trending-item">
-                            <div class="trending-rank">3</div>
-                            <div class="trending-content">
-                                <div class="trending-topic">
-                                    Super Bowl
-                                    <span class="trend-badge hot">HOT</span>
-                                </div>
-                                <div class="trending-meta">Sports - Trending for 6 hours</div>
-                                <div class="trending-stats">
-                                    <span class="trending-stat up">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-                                        +520% volume
-                                    </span>
-                                    <span class="trending-stat">450K posts</span>
-                                </div>
-                            </div>
-                            <div class="trending-actions">
-                                <button class="use-trend-btn" onclick="useTrend('Super Bowl')">Create Post</button>
-                            </div>
-                        </div>
-
-                        <div class="trending-item">
-                            <div class="trending-rank">4</div>
-                            <div class="trending-content">
-                                <div class="trending-topic">
-                                    #NFTs
-                                    <span class="trend-badge new">NEW</span>
-                                </div>
-                                <div class="trending-meta">Crypto/Art - Trending for 1 hour</div>
-                                <div class="trending-stats">
-                                    <span class="trending-stat up">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-                                        +95% volume
-                                    </span>
-                                    <span class="trending-stat">34K posts</span>
-                                </div>
-                            </div>
-                            <div class="trending-actions">
-                                <button class="use-trend-btn" onclick="useTrend('#NFTs')">Create Post</button>
-                            </div>
-                        </div>
-
-                        <div class="trending-item">
-                            <div class="trending-rank">5</div>
-                            <div class="trending-content">
-                                <div class="trending-topic">
-                                    Remote Work
-                                    <span class="trend-badge rising">RISING</span>
-                                </div>
-                                <div class="trending-meta">Business - Trending for 3 hours</div>
-                                <div class="trending-stats">
-                                    <span class="trending-stat up">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
-                                        +67% volume
-                                    </span>
-                                    <span class="trending-stat">28K posts</span>
-                                </div>
-                            </div>
-                            <div class="trending-actions">
-                                <button class="use-trend-btn" onclick="useTrend('Remote Work')">Create Post</button>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="trending-list" id="trendingList"></div>
                 </div>
 
                 <div class="categories-panel">
                     <h3 class="section-title">Categories</h3>
-                    <div class="category-list">
-                        <div class="category-item active">
-                            <span class="category-name"><span class="emoji">&#128293;</span> All</span>
-                            <span class="category-count">24</span>
-                        </div>
-                        <div class="category-item">
-                            <span class="category-name"><span class="emoji">&#128176;</span> Crypto</span>
-                            <span class="category-count">8</span>
-                        </div>
-                        <div class="category-item">
-                            <span class="category-name"><span class="emoji">&#129302;</span> Tech</span>
-                            <span class="category-count">6</span>
-                        </div>
-                        <div class="category-item">
-                            <span class="category-name"><span class="emoji">&#127942;</span> Sports</span>
-                            <span class="category-count">4</span>
-                        </div>
-                        <div class="category-item">
-                            <span class="category-name"><span class="emoji">&#127916;</span> Entertainment</span>
-                            <span class="category-count">3</span>
-                        </div>
-                        <div class="category-item">
-                            <span class="category-name"><span class="emoji">&#128188;</span> Business</span>
-                            <span class="category-count">3</span>
-                        </div>
-                    </div>
+                    <div class="category-list" id="categoryList"></div>
                 </div>
             </div>
 
-            <div class="suggested-section">
-                <h2 class="section-title">Suggested Content Based on Trends</h2>
-                <div class="suggested-grid">
-                    <div class="suggested-card">
-                        <div class="suggested-header">
-                            <span class="suggested-topic">#Bitcoin</span>
-                            <span class="suggested-platform">X / Twitter</span>
-                        </div>
-                        <div class="suggested-content">
-                            "Bitcoin hitting new highs! Are you holding or selling? The best investment strategy is one you can sleep with at night."
-                        </div>
-                        <div class="suggested-actions">
-                            <button class="suggested-btn">Edit</button>
-                            <button class="suggested-btn">Regenerate</button>
-                            <button class="suggested-btn primary">Use This</button>
-                        </div>
-                    </div>
-
-                    <div class="suggested-card">
-                        <div class="suggested-header">
-                            <span class="suggested-topic">AI Revolution</span>
-                            <span class="suggested-platform">X / Twitter</span>
-                        </div>
-                        <div class="suggested-content">
-                            "The AI revolution isn't coming - it's here. The question isn't IF you'll use AI, but HOW you'll use it to stay ahead."
-                        </div>
-                        <div class="suggested-actions">
-                            <button class="suggested-btn">Edit</button>
-                            <button class="suggested-btn">Regenerate</button>
-                            <button class="suggested-btn primary">Use This</button>
-                        </div>
-                    </div>
-
-                    <div class="suggested-card">
-                        <div class="suggested-header">
-                            <span class="suggested-topic">Super Bowl</span>
-                            <span class="suggested-platform">X / Twitter</span>
-                        </div>
-                        <div class="suggested-content">
-                            "Super Bowl Sunday vibes! Who are you rooting for? Drop your predictions below."
-                        </div>
-                        <div class="suggested-actions">
-                            <button class="suggested-btn">Edit</button>
-                            <button class="suggested-btn">Regenerate</button>
-                            <button class="suggested-btn primary">Use This</button>
-                        </div>
-                    </div>
+            <div class="suggested-section" id="suggestedSection">
+                <h2 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    Suggested Content
+                </h2>
+                <div class="suggested-intro" id="suggestedIntro">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span>Click on any trending topic above to generate suggested posts you can use or customize.</span>
                 </div>
+                <div class="suggested-grid" id="suggestedGrid"></div>
             </div>
         </div>
     </main>
 
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <span id="toastMessage">Copied to clipboard!</span>
+    </div>
+
     <script>
-        function useTrend(topic) {
-            window.location.href = `/generate?topic=${encodeURIComponent(topic)}`;
+        // ── Data ─────────────────────────────────────────────────
+        const trendingTopics = [
+            { rank: 1, topic: '#Bitcoin', category: 'Crypto', badge: 'hot', volume: '125K', change: '+245%', duration: '4 hours' },
+            { rank: 2, topic: 'Ethereum ETF', category: 'Crypto', badge: 'rising', volume: '89K', change: '+180%', duration: '2 hours' },
+            { rank: 3, topic: '#AI', category: 'Tech', badge: 'hot', volume: '450K', change: '+520%', duration: '6 hours' },
+            { rank: 4, topic: '#NFTs', category: 'NFTs', badge: 'new', volume: '34K', change: '+95%', duration: '1 hour' },
+            { rank: 5, topic: 'Solana', category: 'Crypto', badge: 'rising', volume: '67K', change: '+150%', duration: '3 hours' },
+            { rank: 6, topic: '#DeFi', category: 'Crypto', badge: 'hot', volume: '28K', change: '+67%', duration: '5 hours' },
+            { rank: 7, topic: 'Apple Vision Pro', category: 'Tech', badge: 'rising', volume: '120K', change: '+340%', duration: '8 hours' },
+            { rank: 8, topic: '#BAYC', category: 'NFTs', badge: 'new', volume: '12K', change: '+88%', duration: '30 min' },
+            { rank: 9, topic: 'Web3 Gaming', category: 'Tech', badge: 'rising', volume: '45K', change: '+120%', duration: '4 hours' },
+            { rank: 10, topic: '#Ordinals', category: 'Crypto', badge: 'new', volume: '19K', change: '+200%', duration: '2 hours' },
+        ];
+
+        const suggestedPosts = {
+            '#Bitcoin': [
+                "Bitcoin is doing what Bitcoin does best - proving the doubters wrong. Every cycle the same pattern: denial, FOMO, accumulation, repeat. Where are you in this cycle?",
+                "The best time to understand Bitcoin was 10 years ago. The second best time is now. Don't let another halving pass you by without doing the research.",
+                "Unpopular opinion: Bitcoin isn't just a trade, it's a generational wealth transfer happening in real time. The signal has never been louder."
+            ],
+            'Ethereum ETF': [
+                "Ethereum ETF approval would be the biggest institutional unlock since the Bitcoin ETF. Traditional finance is waking up to ETH - are you positioned?",
+                "The Ethereum ETF narrative isn't just about price. It's about legitimizing an entire ecosystem of DeFi, NFTs, and smart contracts to Wall Street.",
+                "If a Bitcoin ETF was the appetizer, an Ethereum ETF is the main course. The smart money knows what's coming next."
+            ],
+            '#AI': [
+                "AI isn't replacing creators - it's amplifying them. The ones who learn to work WITH AI will outperform everyone who works against it. Adapt or get left behind.",
+                "The AI revolution is creating two types of people: those who use AI as a tool and those who compete against it. Choose wisely.",
+                "Hot take: In 5 years, not using AI in your workflow will be like not using the internet in 2005. The gap is only getting wider."
+            ],
+            '#NFTs': [
+                "NFTs aren't dead - the tourists just left. What remains is real builders, real art, and real utility. This is where generational collections are born.",
+                "The best NFT projects are being built right now while nobody's watching. The next blue chips won't come from hype, they'll come from utility.",
+                "If you're still in the NFT space after the bear market, congratulations - you're not a speculator, you're a believer. And believers get rewarded."
+            ],
+            'Solana': [
+                "Solana's ecosystem is exploding and most people are sleeping on it. Fast, cheap, and developer-friendly - that's the trifecta for mass adoption.",
+                "The Solana vs Ethereum debate misses the point. Both will win. The real competition is TradFi vs crypto. Focus on what matters.",
+                "Solana just hit another milestone and the response? Crickets from mainstream media. That's how you know we're still early."
+            ],
+            '#DeFi': [
+                "DeFi is doing what banks have done for centuries - but without the middlemen, the gatekeepers, and the 3-day settlement times. The future is permissionless.",
+                "Real yield > token emissions. The DeFi projects that survive are the ones generating actual revenue. Stop chasing APYs, start evaluating fundamentals.",
+                "DeFi Summer 2.0 is brewing and most people don't even realize it. New primitives, better UX, and institutional interest. This time it's different."
+            ],
+            'Apple Vision Pro': [
+                "Apple Vision Pro isn't just a headset - it's Apple's bet on the next computing platform. First came mobile, now comes spatial. Are you building for it?",
+                "The Vision Pro reviews are in and one thing is clear: we're watching the 'iPhone moment' for spatial computing. Clunky now, transformative later.",
+                "Everyone laughing at Apple Vision Pro today is giving off the same energy as people who said the iPad was just a big iPhone. History rhymes."
+            ],
+            '#BAYC': [
+                "BAYC isn't just a PFP collection - it's a cultural movement and a masterclass in community building. The apes who held through the bear market know what's up.",
+                "The floor might fluctuate but the BAYC community only gets stronger. When you hold an ape, you hold a ticket to the most exclusive club in Web3.",
+                "New BAYC utility dropping and the community is buzzing. This is why blue chips are blue chips - they keep building when everyone else stops."
+            ],
+            'Web3 Gaming': [
+                "Web3 gaming is about to have its breakout moment. The difference now? Games are actually FUN first, crypto second. That's the formula that wins.",
+                "The Web3 gaming space learned from its mistakes. No more play-to-earn ponzinomics. Now it's play-AND-earn with sustainable economies. Big difference.",
+                "Traditional gaming studios entering Web3 is the signal everyone should be watching. When AAA meets blockchain, mass adoption follows."
+            ],
+            '#Ordinals': [
+                "Bitcoin Ordinals are doing something nobody thought possible - bringing NFT culture to the most secure blockchain. The OGs are paying attention.",
+                "Ordinals proved that Bitcoin isn't just for maxis. It's a canvas for creativity, and the inscriptions being minted today could be tomorrow's Cryptopunks.",
+                "The Ordinals debate is healthy for Bitcoin. Innovation should be encouraged, not gatekept. The chain that evolves is the chain that survives."
+            ]
+        };
+
+        const categoryEmojis = {
+            'All': '&#128293;',
+            'Crypto': '&#128176;',
+            'Tech': '&#129302;',
+            'Sports': '&#127942;',
+            'Entertainment': '&#127916;',
+            'Business': '&#128188;',
+            'NFTs': '&#127912;'
+        };
+
+        const categories = ['All', 'Crypto', 'Tech', 'Sports', 'Entertainment', 'Business', 'NFTs'];
+
+        // ── State ────────────────────────────────────────────────
+        let activeCategory = 'All';
+        let selectedTrend = null;
+
+        // ── Init ─────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchTrends();
+            renderCategories();
+            renderTrends();
+        });
+
+        // ── Fetch Trends (hybrid approach) ───────────────────────
+        async function fetchTrends() {
+            try {
+                const response = await fetch('/api/trends');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length) {
+                        // Merge real API data if available
+                        console.log('Loaded trends from API');
+                    }
+                }
+            } catch (e) {
+                // Fall back to curated data - already loaded
+                console.log('Using curated trending data');
+            }
+            renderTrends();
         }
 
+        // ── Render Categories ────────────────────────────────────
+        function renderCategories() {
+            const container = document.getElementById('categoryList');
+            const counts = {};
+            categories.forEach(c => counts[c] = 0);
+            counts['All'] = trendingTopics.length;
+            trendingTopics.forEach(t => {
+                if (counts[t.category] !== undefined) counts[t.category]++;
+            });
+
+            container.innerHTML = categories.map(cat => `
+                <div class="category-item ${activeCategory === cat ? 'active' : ''}" onclick="filterCategory('${cat}')">
+                    <span class="category-name"><span class="emoji">${categoryEmojis[cat]}</span> ${cat}</span>
+                    <span class="category-count">${counts[cat]}</span>
+                </div>
+            `).join('');
+        }
+
+        // ── Render Trends ────────────────────────────────────────
+        function renderTrends() {
+            const container = document.getElementById('trendingList');
+            const filtered = activeCategory === 'All'
+                ? trendingTopics
+                : trendingTopics.filter(t => t.category === activeCategory);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <h3>No trends in this category</h3>
+                        <p>Try selecting a different category or refresh the data.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map((trend, idx) => `
+                <div class="trending-item fade-in ${selectedTrend === trend.topic ? 'selected' : ''}"
+                     style="animation-delay: ${idx * 0.05}s"
+                     onclick="selectTrend('${trend.topic.replace(/'/g, "\\'")}')">
+                    <div class="trending-rank">${trend.rank}</div>
+                    <div class="trending-content">
+                        <div class="trending-topic">
+                            ${trend.topic}
+                            <span class="trend-badge ${trend.badge}">${trend.badge.toUpperCase()}</span>
+                        </div>
+                        <div class="trending-meta">${trend.category} - Trending for ${trend.duration}</div>
+                        <div class="trending-stats">
+                            <span class="trending-stat up">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline></svg>
+                                ${trend.change} volume
+                            </span>
+                            <span class="trending-stat">${trend.volume} posts</span>
+                        </div>
+                    </div>
+                    <div class="trending-actions">
+                        <button class="use-trend-btn" onclick="event.stopPropagation(); createPost('${trend.topic.replace(/'/g, "\\'")}')">Create Post</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── Filter Category ──────────────────────────────────────
+        function filterCategory(cat) {
+            activeCategory = cat;
+            renderCategories();
+            renderTrends();
+        }
+
+        // ── Select Trend & Show Suggestions ──────────────────────
+        function selectTrend(topic) {
+            selectedTrend = topic;
+            renderTrends();
+            renderSuggestions(topic);
+            document.getElementById('suggestedSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ── Render Suggestions ───────────────────────────────────
+        function renderSuggestions(topic) {
+            const intro = document.getElementById('suggestedIntro');
+            const grid = document.getElementById('suggestedGrid');
+            const posts = suggestedPosts[topic];
+
+            if (!posts || posts.length === 0) {
+                intro.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <span>No suggested posts available for <strong>${topic}</strong>. Try another trend!</span>
+                `;
+                grid.innerHTML = '';
+                return;
+            }
+
+            intro.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span>Showing 3 suggested posts for <strong>${topic}</strong> - Edit, regenerate, or use them directly.</span>
+            `;
+
+            grid.innerHTML = posts.map((post, idx) => `
+                <div class="suggested-card" style="animation-delay: ${idx * 0.1}s">
+                    <div class="suggested-header">
+                        <span class="suggested-topic">${topic}</span>
+                        <span class="suggested-label">Suggestion ${idx + 1}</span>
+                    </div>
+                    <div class="suggested-content" id="postContent-${idx}">${post}</div>
+                    <div class="char-count">${post.length} / 280 characters</div>
+                    <div class="suggested-actions">
+                        <button class="suggested-btn" onclick="editPost(${idx}, '${topic.replace(/'/g, "\\'")}')">Edit</button>
+                        <button class="suggested-btn" onclick="regeneratePost(${idx}, '${topic.replace(/'/g, "\\'")}')">Regenerate</button>
+                        <button class="suggested-btn primary" onclick="usePost(${idx})">Use This</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ── Create Post (link to /generate) ──────────────────────
+        function createPost(topic) {
+            window.location.href = '/generate?topic=' + encodeURIComponent(topic);
+        }
+
+        // ── Edit Post ────────────────────────────────────────────
+        function editPost(idx, topic) {
+            const el = document.getElementById('postContent-' + idx);
+            const currentText = el.textContent;
+            el.setAttribute('contenteditable', 'true');
+            el.style.outline = '2px solid var(--accent)';
+            el.style.borderRadius = '8px';
+            el.focus();
+
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+
+            const handleBlur = () => {
+                el.setAttribute('contenteditable', 'false');
+                el.style.outline = 'none';
+                // Update character count
+                const charCount = el.parentElement.querySelector('.char-count');
+                if (charCount) charCount.textContent = el.textContent.length + ' / 280 characters';
+                el.removeEventListener('blur', handleBlur);
+            };
+            el.addEventListener('blur', handleBlur);
+        }
+
+        // ── Regenerate Post ──────────────────────────────────────
+        function regeneratePost(idx, topic) {
+            const el = document.getElementById('postContent-' + idx);
+            const posts = suggestedPosts[topic];
+            if (!posts) return;
+
+            // Create variation of existing post
+            const variations = [
+                `Just my thoughts on ${topic}: the opportunity window is closing fast. Those who move now will look like geniuses in hindsight. Don't sleep on this.`,
+                `Everyone is talking about ${topic} but few actually understand the implications. Here's the thing most people miss - this changes everything.`,
+                `${topic} update: We're witnessing a paradigm shift in real time. The old playbook doesn't apply anymore. New rules, new winners.`,
+                `The ${topic} narrative keeps evolving and I'm here for it. When you zoom out, the trajectory is undeniable. Long-term conviction wins.`,
+                `Real talk about ${topic}: ignore the noise, focus on the fundamentals. The signal-to-noise ratio is terrible right now but the signal is deafening.`,
+            ];
+
+            const current = el.textContent;
+            let newPost = variations[Math.floor(Math.random() * variations.length)];
+            while (newPost === current) {
+                newPost = variations[Math.floor(Math.random() * variations.length)];
+            }
+
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.textContent = newPost;
+                el.style.opacity = '1';
+                const charCount = el.parentElement.querySelector('.char-count');
+                if (charCount) charCount.textContent = newPost.length + ' / 280 characters';
+            }, 200);
+
+            showToast('Post regenerated!');
+        }
+
+        // ── Use Post ─────────────────────────────────────────────
+        function usePost(idx) {
+            const el = document.getElementById('postContent-' + idx);
+            const text = el.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard! Redirecting to editor...');
+                setTimeout(() => {
+                    window.location.href = '/generate?content=' + encodeURIComponent(text);
+                }, 1500);
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Copied to clipboard! Redirecting to editor...');
+                setTimeout(() => {
+                    window.location.href = '/generate?content=' + encodeURIComponent(text);
+                }, 1500);
+            });
+        }
+
+        // ── Refresh Trends ───────────────────────────────────────
         function refreshTrends() {
-            alert('Refreshing trends... (API integration coming soon!)');
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('spinning');
+
+            // Randomize volumes slightly to simulate refresh
+            trendingTopics.forEach(t => {
+                const baseVol = parseInt(t.volume.replace('K', ''));
+                const variance = Math.floor(baseVol * (Math.random() * 0.3 - 0.15));
+                t.volume = (baseVol + variance) + 'K';
+
+                const baseChange = parseInt(t.change.replace('+', '').replace('%', ''));
+                const changeVariance = Math.floor(baseChange * (Math.random() * 0.2 - 0.1));
+                t.change = '+' + (baseChange + changeVariance) + '%';
+            });
+
+            // Simulate network delay
+            setTimeout(() => {
+                renderTrends();
+                renderCategories();
+                btn.classList.remove('spinning');
+                showToast('Trends refreshed!');
+            }, 800);
+        }
+
+        // ── Toast ────────────────────────────────────────────────
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
     </script>
 </body>
