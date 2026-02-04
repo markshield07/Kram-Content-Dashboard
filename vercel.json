@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/image.py": {
+      "includeFiles": "assets/mutant-ape/mutant_ape.png"
+    }
+  },
   "rewrites": [
     { "source": "/login", "destination": "/login.html" },
     { "source": "/dashboard", "destination": "/dashboard.html" },

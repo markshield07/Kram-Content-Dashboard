@@ -604,15 +604,11 @@
             <!-- Generator Panel -->
             <div class="generator-panel">
                 <h2 class="section-title">Reference Image</h2>
-                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-area has-image" id="uploadArea" onclick="document.getElementById('fileInput').click()">
                     <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
-                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <div class="upload-text">Click to upload a reference image</div>
-                    <div class="upload-hint">PNG, JPG up to 10MB</div>
+                    <img src="/assets/mutant-ape/mutant_ape.png" class="uploaded-image" alt="KRAM's Mutant Ape" id="referencePreview">
+                    <div class="upload-text" style="margin-top: 12px;">Your Mutant Ape (auto-loaded) — click to use a different image</div>
+                    <div class="upload-hint">The server always references your Mutant Ape for GPT-4o analysis</div>
                 </div>
 
                 <div class="prompt-section">
@@ -743,7 +739,7 @@
                             <polyline points="21 15 16 10 5 21"></polyline>
                         </svg>
                         <h3>No images yet</h3>
-                        <p>Upload a reference image and describe what you want to create</p>
+                        <p>Describe the scene you want your Mutant Ape in and hit Generate</p>
                     </div>
                 </div>
             </div>
@@ -752,7 +748,7 @@
 
     <script>
         let selectedPreset = 'realistic';
-        let uploadedImage = null;
+        let uploadedImage = null;  // null = use server's default Mutant Ape
         let isGenerating = false;
 
         function selectPreset(el, preset) {
@@ -771,12 +767,26 @@
                 const uploadArea = document.getElementById('uploadArea');
                 uploadArea.classList.add('has-image');
                 uploadArea.innerHTML = `
-                    <img src="${uploadedImage}" class="uploaded-image" alt="Uploaded reference">
-                    <div class="upload-text" style="margin-top: 12px;">Click to change image</div>
+                    <img src="${uploadedImage}" class="uploaded-image" alt="Custom reference">
+                    <div class="upload-text" style="margin-top: 12px;">Custom reference loaded — click to change</div>
+                    <div class="upload-hint"><a href="#" onclick="resetToDefault(event)" style="color: var(--accent);">Reset to Mutant Ape</a></div>
                     <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
                 `;
             };
             reader.readAsDataURL(file);
+        }
+
+        function resetToDefault(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadedImage = null;
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.innerHTML = `
+                <img src="/assets/mutant-ape/mutant_ape.png" class="uploaded-image" alt="KRAM's Mutant Ape" id="referencePreview">
+                <div class="upload-text" style="margin-top: 12px;">Your Mutant Ape (auto-loaded) — click to use a different image</div>
+                <div class="upload-hint">The server always references your Mutant Ape for GPT-4o analysis</div>
+                <input type="file" id="fileInput" accept="image/*" style="display: none" onchange="handleFileUpload(event)">
+            `;
         }
 
         function usePrompt(el) {
@@ -810,10 +820,9 @@
             const aspectRatio = document.getElementById('aspectRatio').value;
             const quality = document.getElementById('quality').value;
 
-            const loadingText = uploadedImage
-                ? 'Analyzing reference with GPT-4o, building template prompt, then generating with DALL-E 3...'
-                : 'Building prompt from template, then generating with DALL-E 3... This may take 15-30 seconds.';
-            container.querySelector('.loading-text').textContent = loadingText;
+            // GPT-4o always analyzes the reference image (server auto-loads Mutant Ape if none sent)
+            container.querySelector('.loading-text').textContent =
+                'Analyzing reference image with GPT-4o, building template prompt, then generating with DALL-E 3...';
 
             const requestBody = {
                 prompt: prompt,
@@ -822,7 +831,8 @@
                 quality: quality
             };
 
-            // Include reference image if uploaded
+            // Send custom reference image if user uploaded one
+            // Otherwise, server auto-loads the Mutant Ape image
             if (uploadedImage) {
                 requestBody.reference_image = uploadedImage;
             }

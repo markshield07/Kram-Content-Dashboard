@@ -1,20 +1,45 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import base64
 import urllib.request
 import urllib.error
+from pathlib import Path
 
 
 # ============================================
 # KRAM's Mutant Ape - Character Reference
 # ============================================
 CHARACTER_DESCRIPTION = (
-    "KRAM's Mutant Ape character - a stylized ape with cheetah/leopard print fur "
-    "(yellow-gold base with brown spots), glowing gold coin eyes with dripping gold effect, "
-    "mint green gradient teeth in a wide grin, brown shaggy mustache/beard, "
-    "white bunny ears headpiece with cartoon faces on each ear, "
-    "and a small cheetah companion creature"
+    "KRAM's Mutant Ape Yacht Club NFT character - a stylized ape with cheetah/leopard print fur "
+    "(yellow-gold base with brown spots), glowing golden coin eyes with sparkle effects and dripping gold, "
+    "wide grin with mint green gradient teeth and pink gums visible, brown shaggy mustache and beard, "
+    "white bunny ears headpiece with pink/brown inner ears and a small cartoon face on each ear, "
+    "small silver piercing in left ear, mischievous grin with wild energy, "
+    "and a small cheetah companion creature at bottom with orange eyes and spotted fur"
 )
+
+# Load the Mutant Ape reference image as base64 at module level
+# This ensures GPT-4o always has the real image to reference
+_MUTANT_APE_B64 = None
+def _load_mutant_ape_image():
+    global _MUTANT_APE_B64
+    if _MUTANT_APE_B64 is not None:
+        return _MUTANT_APE_B64
+    # Try to find the image - check multiple possible paths for different environments
+    possible_paths = [
+        Path(__file__).parent.parent / 'assets' / 'mutant-ape' / 'mutant_ape.png',  # Local dev
+        Path(__file__).parent / 'assets' / 'mutant-ape' / 'mutant_ape.png',  # Vercel includeFiles
+        Path('/var/task/assets/mutant-ape/mutant_ape.png'),  # Vercel absolute
+        Path('/var/task/api/assets/mutant-ape/mutant_ape.png'),  # Vercel alt path
+    ]
+    for img_path in possible_paths:
+        if img_path.exists():
+            with open(img_path, 'rb') as f:
+                img_bytes = f.read()
+            _MUTANT_APE_B64 = f"data:image/png;base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+            return _MUTANT_APE_B64
+    return None
 
 # ============================================
 # Prompt Components (matching prompt_template.md)
@@ -138,10 +163,18 @@ class handler(BaseHTTPRequestHandler):
             # Get the art style from our template components
             art_style = ART_STYLES.get(style, ART_STYLES['realistic'])
 
-            # If reference image provided, use GPT-4o vision to build prompt in our template format
-            if reference_image:
+            # Always use the Mutant Ape as reference for GPT-4o vision
+            # User can override with their own reference image, but default is the Mutant Ape
+            mutant_ape_b64 = _load_mutant_ape_image()
+
+            # Determine which image to send to GPT-4o
+            # If user uploaded a reference, use that; otherwise use the default Mutant Ape
+            vision_image = reference_image if reference_image else mutant_ape_b64
+
+            if vision_image:
+                # Use GPT-4o vision to build prompt with the actual image reference
                 enhanced = self._enhance_prompt_with_vision(
-                    api_key, prompt, art_style, reference_image
+                    api_key, prompt, art_style, vision_image
                 )
                 if enhanced.get('error'):
                     self._send_json(500, {'success': False, 'error': enhanced['error']})
@@ -149,7 +182,7 @@ class handler(BaseHTTPRequestHandler):
                 full_prompt = enhanced['prompt']
                 vision_description = enhanced.get('description', '')
             else:
-                # No reference image - build prompt using our template format directly
+                # Fallback: no image available, use text-only template
                 full_prompt = self._build_template_prompt(prompt, art_style)
                 vision_description = ''
 
