@@ -132,6 +132,10 @@
         .toggle-switch.large .toggle-slider::before { height: 28px; width: 28px; }
         .toggle-switch.large input:checked + .toggle-slider::before { transform: translateX(30px); }
 
+        .toggle-switch.small { width: 44px; height: 24px; }
+        .toggle-switch.small .toggle-slider::before { height: 18px; width: 18px; }
+        .toggle-switch.small input:checked + .toggle-slider::before { transform: translateX(20px); }
+
         /* Settings Panels */
         .settings-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;
@@ -201,17 +205,6 @@
         }
         .form-select:focus { outline: none; border-color: var(--accent); }
 
-        .time-range {
-            display: flex; align-items: center; gap: 8px;
-        }
-        .time-input {
-            background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 8px; padding: 8px 12px; color: var(--text-primary);
-            font-size: 13px; width: 100px;
-        }
-        .time-input:focus { outline: none; border-color: var(--accent); }
-        .time-separator { color: var(--text-secondary); font-size: 13px; }
-
         .locked-badge {
             display: flex; align-items: center; gap: 4px;
             font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary);
@@ -265,59 +258,127 @@
         .btn-sm { padding: 8px 14px; font-size: 13px; }
         .btn svg { width: 18px; height: 18px; }
 
-        /* Activity Feed */
-        .activity-section {
+        /* My Posts Section */
+        .posts-section {
             background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
-            overflow: hidden; transition: opacity 0.3s;
+            overflow: hidden; margin-bottom: 24px; transition: opacity 0.3s;
         }
-        .activity-section.disabled { opacity: 0.4; pointer-events: none; }
+        .posts-section.disabled { opacity: 0.4; pointer-events: none; }
 
-        .activity-list { padding: 20px; }
-
-        .activity-item {
-            display: flex; gap: 16px; padding: 16px;
-            background: var(--bg-secondary); border-radius: 10px;
-            margin-bottom: 12px;
+        .posts-header {
+            padding: 16px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .activity-item:last-child { margin-bottom: 0; }
 
-        .activity-avatar {
-            width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+        .refresh-btn {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+            padding: 8px 14px; color: var(--text-secondary); font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+        }
+        .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .refresh-btn svg { width: 16px; height: 16px; }
+        .refresh-btn.loading svg { animation: spin 1s linear infinite; }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .posts-list { padding: 20px; }
+
+        .post-card {
+            display: flex; align-items: flex-start; gap: 16px;
+            padding: 18px; background: var(--bg-secondary); border-radius: 12px;
+            margin-bottom: 12px; transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .post-card:last-child { margin-bottom: 0; }
+        .post-card:hover { border-color: var(--border); }
+        .post-card.replies-enabled { border-color: rgba(52, 199, 89, 0.3); background: rgba(52, 199, 89, 0.03); }
+
+        .post-body { flex: 1; min-width: 0; }
+        .post-text { font-size: 14px; line-height: 1.6; margin-bottom: 12px; word-wrap: break-word; }
+
+        .post-metrics {
+            display: flex; gap: 20px; margin-bottom: 12px;
+        }
+        .metric {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .metric svg { width: 16px; height: 16px; }
+        .metric.has-replies { color: var(--accent); font-weight: 500; }
+
+        .post-time { font-size: 12px; color: var(--text-secondary); }
+
+        .post-toggle {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            flex-shrink: 0; padding-top: 4px;
+        }
+        .post-toggle-label {
+            font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+        .post-toggle-label.active { color: var(--success); }
+
+        /* Reply Activity (per post) */
+        .post-replies-section {
+            margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+            display: none;
+        }
+        .post-card.replies-enabled .post-replies-section { display: block; }
+
+        .reply-activity-item {
+            display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+            background: var(--bg-card); border-radius: 8px; margin-bottom: 8px;
+        }
+        .reply-activity-item:last-child { margin-bottom: 0; }
+
+        .reply-avatar {
+            width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
             background: linear-gradient(135deg, var(--accent), #e65c00);
             display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 16px; color: #000;
+            font-weight: 700; font-size: 12px; color: #000;
         }
 
-        .activity-content { flex: 1; min-width: 0; }
+        .reply-details { flex: 1; min-width: 0; }
+        .reply-author { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .reply-author .handle { font-weight: 400; color: var(--text-secondary); margin-left: 6px; }
+        .reply-comment { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.4; }
 
-        .activity-author {
-            display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+        .your-reply-box {
+            font-size: 13px; padding: 8px 10px; background: rgba(247, 147, 26, 0.06);
+            border-radius: 6px; border-left: 3px solid var(--accent); margin-top: 6px;
         }
-        .author-name { font-size: 14px; font-weight: 600; }
-        .author-handle { font-size: 13px; color: var(--text-secondary); }
-        .verified-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 18px; height: 18px;
-        }
-        .verified-badge svg { width: 16px; height: 16px; }
+        .your-reply-label { font-size: 10px; color: var(--accent); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
 
-        .activity-original {
-            font-size: 13px; color: var(--text-secondary); line-height: 1.5;
-            margin-bottom: 10px; padding: 10px 12px;
-            background: var(--bg-card); border-radius: 8px;
-            border-left: 3px solid var(--border);
+        .reply-time { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+        .no-replies-msg {
+            font-size: 13px; color: var(--text-secondary); text-align: center; padding: 16px;
+            font-style: italic;
         }
 
-        .activity-reply {
-            font-size: 14px; line-height: 1.5; margin-bottom: 8px;
-            padding: 10px 12px; background: rgba(247, 147, 26, 0.06);
-            border-radius: 8px; border-left: 3px solid var(--accent);
+        /* Loading & Empty State */
+        .loading-state, .empty-state, .error-state {
+            padding: 60px 20px; text-align: center; color: var(--text-secondary);
         }
-        .reply-label { font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 4px; }
-
-        .activity-time { font-size: 12px; color: var(--text-secondary); }
+        .loading-state svg { width: 40px; height: 40px; color: var(--accent); animation: spin 1s linear infinite; margin-bottom: 16px; }
+        .empty-state svg, .error-state svg { width: 48px; height: 48px; margin-bottom: 16px; color: var(--text-secondary); }
+        .loading-state p, .empty-state p, .error-state p { font-size: 14px; margin-bottom: 4px; }
+        .empty-state .subtext, .error-state .subtext { font-size: 13px; color: var(--text-secondary); }
+        .error-state svg { color: var(--error); }
 
         .section-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; right: 30px; padding: 14px 24px;
+            border-radius: 10px; font-size: 14px; font-weight: 500;
+            z-index: 1000; transform: translateY(100px); opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); color: #fff; }
+        .toast.error { background: var(--error); color: #fff; }
+        .toast.info { background: var(--accent); color: #000; }
 
         @media (max-width: 1024px) {
             .settings-grid { grid-template-columns: 1fr; }
@@ -361,9 +422,9 @@
         <header class="top-header">
             <div class="header-left">
                 <h1 class="page-title">Reply Bot</h1>
-                <div class="status-indicator active" id="statusIndicator">
+                <div class="status-indicator inactive" id="statusIndicator">
                     <span class="status-dot"></span>
-                    <span id="statusText">Bot Active</span>
+                    <span id="statusText">Bot Inactive</span>
                 </div>
             </div>
             <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--text-primary);display:flex;align-items:center;transition:all 0.2s;"></button>
@@ -373,20 +434,20 @@
             <!-- Stats Bar -->
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="stat-value" id="statRepliesToday">24</div>
-                    <div class="stat-label">Replies Today</div>
+                    <div class="stat-value" id="statTotalPosts">-</div>
+                    <div class="stat-label">Your Posts</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="statRepliesWeek">156</div>
-                    <div class="stat-label">Replies This Week</div>
+                    <div class="stat-value" id="statEnabledPosts">0</div>
+                    <div class="stat-label">Replies Enabled</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="statAccountsEngaged">89</div>
-                    <div class="stat-label">Accounts Engaged</div>
+                    <div class="stat-value" id="statTotalReplies">-</div>
+                    <div class="stat-label">Total Replies Received</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value" id="statSuccessRate">98%</div>
-                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-value" id="statBotReplies">0</div>
+                    <div class="stat-label">Bot Replies Sent</div>
                 </div>
             </div>
 
@@ -394,25 +455,25 @@
             <div class="master-toggle-section">
                 <div class="master-toggle-info">
                     <div class="master-toggle-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2H8V6a4 4 0 0 1 4-4z"></path><rect x="3" y="8" width="18" height="14" rx="2"></rect><circle cx="12" cy="16" r="2"></circle></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 10h.01"></path><path d="M12 10h.01"></path><path d="M16 10h.01"></path></svg>
                     </div>
                     <div class="master-toggle-text">
-                        <h3 id="masterToggleTitle">Reply Bot is Active</h3>
-                        <p id="masterToggleDesc">Automatically replying to verified accounts</p>
+                        <h3 id="masterToggleTitle">Reply Bot is Paused</h3>
+                        <p id="masterToggleDesc">Enable to auto-reply to comments on your posts</p>
                     </div>
                 </div>
                 <label class="toggle-switch large">
-                    <input type="checkbox" id="masterToggle" checked onchange="handleMasterToggle()">
+                    <input type="checkbox" id="masterToggle" onchange="handleMasterToggle()">
                     <span class="toggle-slider"></span>
                 </label>
             </div>
 
             <!-- Settings Grid -->
-            <div class="settings-grid">
+            <div class="settings-grid" id="settingsGrid">
                 <!-- GM Reply Panel -->
-                <div class="settings-panel" id="gmPanel">
+                <div class="settings-panel disabled" id="gmPanel">
                     <div class="panel-header">
-                        <span class="panel-title">GM Replies</span>
+                        <span class="panel-title">GM Reply Templates</span>
                         <label class="toggle-switch">
                             <input type="checkbox" id="gmToggle" checked onchange="handleGmToggle()">
                             <span class="toggle-slider"></span>
@@ -420,7 +481,7 @@
                     </div>
                     <div class="panel-body">
                         <p class="gm-description">
-                            Automatically reply to good morning posts from verified accounts. Use <code>{NAME}</code> to include the poster's X display name in your reply.
+                            Auto-reply to comments on your posts using these GM templates. The bot randomly picks from enabled templates. Use <code>{NAME}</code> to include the commenter's display name.
                         </p>
                         <div class="template-chips" id="gmChips">
                             <div class="template-chip" data-template="gm-name">
@@ -463,15 +524,15 @@
                 </div>
 
                 <!-- General Reply Settings Panel -->
-                <div class="settings-panel" id="generalPanel">
+                <div class="settings-panel disabled" id="generalPanel">
                     <div class="panel-header">
-                        <span class="panel-title">General Settings</span>
+                        <span class="panel-title">Reply Settings</span>
                     </div>
                     <div class="panel-body">
                         <div class="setting-row">
                             <div class="setting-info">
                                 <div class="setting-label">Verified Accounts Only</div>
-                                <div class="setting-desc">Only reply to verified (blue check) accounts</div>
+                                <div class="setting-desc">Only reply to verified (blue check) commenters</div>
                             </div>
                             <div class="setting-control">
                                 <div class="locked-badge">
@@ -482,38 +543,40 @@
                         </div>
                         <div class="setting-row">
                             <div class="setting-info">
-                                <div class="setting-label">Reply Frequency</div>
-                                <div class="setting-desc">How often the bot should reply</div>
+                                <div class="setting-label">Reply Speed</div>
+                                <div class="setting-desc">Delay between sending replies</div>
                             </div>
                             <div class="setting-control">
-                                <select class="form-select" id="replyFrequency" onchange="saveSettings()">
-                                    <option value="every">Every post</option>
-                                    <option value="every_other">Every other post</option>
-                                    <option value="3_5_per_hour" selected>3-5 per hour</option>
+                                <select class="form-select" id="replySpeed" onchange="saveSettings()">
+                                    <option value="instant">Instant</option>
+                                    <option value="1min" selected>1 min delay</option>
+                                    <option value="5min">5 min delay</option>
+                                    <option value="random">Random (1-10 min)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="setting-row">
                             <div class="setting-info">
-                                <div class="setting-label">Active Hours</div>
-                                <div class="setting-desc">Time range when the bot is active</div>
+                                <div class="setting-label">Max Replies Per Post</div>
+                                <div class="setting-desc">Limit how many replies per post</div>
                             </div>
                             <div class="setting-control">
-                                <div class="time-range">
-                                    <input type="time" class="time-input" id="activeStart" value="07:00" onchange="saveSettings()">
-                                    <span class="time-separator">to</span>
-                                    <input type="time" class="time-input" id="activeEnd" value="23:00" onchange="saveSettings()">
-                                </div>
+                                <select class="form-select" id="maxRepliesPerPost" onchange="saveSettings()">
+                                    <option value="5">5 replies</option>
+                                    <option value="10" selected>10 replies</option>
+                                    <option value="25">25 replies</option>
+                                    <option value="unlimited">Unlimited</option>
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Reply Templates Section -->
-            <div class="templates-section" id="templatesSection">
+            <!-- Custom Templates Section -->
+            <div class="templates-section disabled" id="templatesSection">
                 <div class="panel-header">
-                    <span class="panel-title">Reply Templates</span>
+                    <span class="panel-title">Custom Reply Templates</span>
                     <span class="template-tag" id="templateCount">5 active</span>
                 </div>
                 <div class="template-list" id="templateList">
@@ -574,7 +637,7 @@
                     </div>
                 </div>
                 <div class="add-template-row">
-                    <input type="text" class="add-template-input" id="newTemplateInput" placeholder="Add a custom template... use {NAME} for the poster's display name">
+                    <input type="text" class="add-template-input" id="newTemplateInput" placeholder="Add a custom template... use {NAME} for the commenter's display name">
                     <button class="btn btn-primary btn-sm" onclick="addCustomTemplate()">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         Add
@@ -582,79 +645,65 @@
                 </div>
             </div>
 
-            <!-- Activity Feed -->
-            <div class="activity-section" id="activitySection">
-                <div class="panel-header">
-                    <span class="panel-title">Recent Reply Activity</span>
-                    <span class="template-tag" id="activityCount">4 replies today</span>
+            <!-- My Posts Section -->
+            <div class="posts-section" id="postsSection">
+                <div class="posts-header">
+                    <span class="panel-title">Your Recent Posts</span>
+                    <button class="refresh-btn" id="refreshBtn" onclick="loadMyPosts()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        Refresh
+                    </button>
                 </div>
-                <div class="activity-list" id="activityFeed">
-                    <!-- Activity items populated by JS -->
+                <div class="posts-list" id="postsList">
+                    <div class="loading-state" id="postsLoading">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                        <p>Loading your posts...</p>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
     <script>
-        // Mock activity data
-        const mockActivities = [
-            {
-                initials: 'VB',
-                name: 'vitalik.eth',
-                handle: '@VitalikButerin',
-                original: 'GM everyone. Beautiful morning to work on Ethereum scaling solutions.',
-                reply: 'GM Vitalik',
-                time: '2 minutes ago'
-            },
-            {
-                initials: 'CB',
-                name: 'Cobie',
-                handle: '@coaboroFAT',
-                original: 'gm gm. who is building today?',
-                reply: 'Morning Cobie',
-                time: '18 minutes ago'
-            },
-            {
-                initials: 'PG',
-                name: 'Punk6529',
-                handle: '@punk6529',
-                original: 'GM. Remember: the best time to build was yesterday. The second best time is now.',
-                reply: 'Gmgm Punk6529',
-                time: '45 minutes ago'
-            },
-            {
-                initials: 'GV',
-                name: 'Gary Vee',
-                handle: '@garyvee',
-                original: 'GM! Hope everyone is having an amazing morning. Go crush it today!',
-                reply: 'GM Gary Vee',
-                time: '1 hour ago'
-            }
-        ];
+        // ========== State ==========
+        let myPosts = [];
+        let enabledPostIds = new Set();
+        let botReplyLog = []; // { tweetId, replyToUser, replyText, timestamp }
 
         // Default settings
         const defaultSettings = {
-            masterToggle: true,
+            masterToggle: false,
             gmToggle: true,
             gm_name: true,
             morning_name: true,
             gmgm_name: true,
             gm_plain: true,
             gm_lower: true,
-            replyFrequency: '3_5_per_hour',
-            activeStart: '07:00',
-            activeEnd: '23:00',
+            replySpeed: '1min',
+            maxRepliesPerPost: '10',
             tpl_1: true,
             tpl_2: true,
             tpl_3: true,
             tpl_4: true,
             tpl_5: true,
-            customTemplates: []
+            customTemplates: [],
+            enabledPostIds: []
         };
 
         let settings = {};
 
-        // Load settings from localStorage
+        // ========== Toast ==========
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        // ========== Settings Management ==========
         function loadSettings() {
             const saved = localStorage.getItem('replyBotSettings');
             if (saved) {
@@ -666,24 +715,37 @@
             } else {
                 settings = { ...defaultSettings };
             }
+
+            // Restore enabled post IDs
+            if (settings.enabledPostIds && Array.isArray(settings.enabledPostIds)) {
+                enabledPostIds = new Set(settings.enabledPostIds);
+            }
+
+            // Restore bot reply log
+            const savedLog = localStorage.getItem('replyBotLog');
+            if (savedLog) {
+                try { botReplyLog = JSON.parse(savedLog); } catch (e) { botReplyLog = []; }
+            }
+
             applySettings();
         }
 
-        // Save settings to localStorage
         function saveSettings() {
-            settings.replyFrequency = document.getElementById('replyFrequency').value;
-            settings.activeStart = document.getElementById('activeStart').value;
-            settings.activeEnd = document.getElementById('activeEnd').value;
+            settings.replySpeed = document.getElementById('replySpeed').value;
+            settings.maxRepliesPerPost = document.getElementById('maxRepliesPerPost').value;
+            settings.enabledPostIds = Array.from(enabledPostIds);
             localStorage.setItem('replyBotSettings', JSON.stringify(settings));
         }
 
-        // Apply settings to the UI
+        function saveBotLog() {
+            localStorage.setItem('replyBotLog', JSON.stringify(botReplyLog));
+        }
+
         function applySettings() {
             document.getElementById('masterToggle').checked = settings.masterToggle;
             document.getElementById('gmToggle').checked = settings.gmToggle;
-            document.getElementById('replyFrequency').value = settings.replyFrequency;
-            document.getElementById('activeStart').value = settings.activeStart;
-            document.getElementById('activeEnd').value = settings.activeEnd;
+            document.getElementById('replySpeed').value = settings.replySpeed;
+            document.getElementById('maxRepliesPerPost').value = settings.maxRepliesPerPost;
 
             // Apply chip toggles
             document.querySelectorAll('.template-chip input[type="checkbox"]').forEach(input => {
@@ -708,18 +770,21 @@
                 });
             }
 
-            // Apply master toggle state
             updateMasterToggleUI(settings.masterToggle);
             updateGmToggleUI(settings.gmToggle);
             updateTemplateCount();
+            updateStats();
         }
 
-        // Master toggle handler
+        // ========== Master Toggle ==========
         function handleMasterToggle() {
             const isActive = document.getElementById('masterToggle').checked;
             settings.masterToggle = isActive;
             updateMasterToggleUI(isActive);
             saveSettings();
+            if (isActive) {
+                showToast('Reply Bot activated! It will reply to comments on your enabled posts.', 'success');
+            }
         }
 
         function updateMasterToggleUI(isActive) {
@@ -732,27 +797,24 @@
                 statusIndicator.className = 'status-indicator active';
                 statusText.textContent = 'Bot Active';
                 title.textContent = 'Reply Bot is Active';
-                desc.textContent = 'Automatically replying to verified accounts';
+                desc.textContent = 'Auto-replying to comments on your enabled posts';
             } else {
                 statusIndicator.className = 'status-indicator inactive';
                 statusText.textContent = 'Bot Inactive';
                 title.textContent = 'Reply Bot is Paused';
-                desc.textContent = 'Enable the bot to start replying automatically';
+                desc.textContent = 'Enable to auto-reply to comments on your posts';
             }
 
-            // Enable/disable all panels
-            const panels = ['gmPanel', 'generalPanel', 'templatesSection', 'activitySection'];
+            // Enable/disable panels
+            const panels = ['gmPanel', 'generalPanel', 'templatesSection'];
             panels.forEach(id => {
                 const el = document.getElementById(id);
-                if (isActive) {
-                    el.classList.remove('disabled');
-                } else {
-                    el.classList.add('disabled');
-                }
+                if (isActive) el.classList.remove('disabled');
+                else el.classList.add('disabled');
             });
         }
 
-        // GM toggle handler
+        // ========== GM Toggle ==========
         function handleGmToggle() {
             const isEnabled = document.getElementById('gmToggle').checked;
             settings.gmToggle = isEnabled;
@@ -773,7 +835,7 @@
             });
         }
 
-        // Chip toggle handler
+        // ========== Chip/Template Toggles ==========
         function handleChipToggle(input) {
             const key = input.dataset.key;
             settings[key] = input.checked;
@@ -781,7 +843,6 @@
             updateTemplateCount();
         }
 
-        // Template toggle handler
         function handleTemplateToggle(input) {
             const key = input.dataset.key;
             settings[key] = input.checked;
@@ -789,7 +850,6 @@
             updateTemplateCount();
         }
 
-        // Update template count
         function updateTemplateCount() {
             const allToggles = document.querySelectorAll('.template-item input[type="checkbox"]');
             let active = 0;
@@ -797,7 +857,7 @@
             document.getElementById('templateCount').textContent = active + ' active';
         }
 
-        // Add custom template
+        // ========== Custom Templates ==========
         let customTemplateCounter = 100;
 
         function addCustomTemplate() {
@@ -808,7 +868,6 @@
             const id = 'custom_' + (++customTemplateCounter);
             addTemplateToDOM(text, true, id);
 
-            // Save to settings
             if (!settings.customTemplates) settings.customTemplates = [];
             settings.customTemplates.push({ text: text, enabled: true, id: id });
             settings[id] = true;
@@ -816,6 +875,7 @@
             updateTemplateCount();
 
             input.value = '';
+            showToast('Template added!', 'success');
         }
 
         function addTemplateToDOM(text, enabled, id) {
@@ -847,32 +907,180 @@
             return div.innerHTML;
         }
 
-        // Render activity feed
-        function renderActivityFeed() {
-            const feed = document.getElementById('activityFeed');
-            feed.innerHTML = mockActivities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-avatar">${activity.initials}</div>
-                    <div class="activity-content">
-                        <div class="activity-author">
-                            <span class="author-name">${escapeHTML(activity.name)}</span>
-                            <span class="verified-badge">
-                                <svg viewBox="0 0 24 24" fill="#1d9bf0" stroke="none"><path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81C14.67 2.88 13.43 2 12 2s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91C2.88 9.33 2 10.57 2 12s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81C9.33 21.12 10.57 22 12 22s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91C21.12 14.67 22 13.43 22 12zm-11.07 4.83l-3.43-3.43 1.06-1.06 2.37 2.37 4.69-4.69 1.06 1.06-5.75 5.75z"></path></svg>
-                            </span>
-                            <span class="author-handle">${escapeHTML(activity.handle)}</span>
-                        </div>
-                        <div class="activity-original">${escapeHTML(activity.original)}</div>
-                        <div class="activity-reply">
-                            <div class="reply-label">YOUR REPLY</div>
-                            ${escapeHTML(activity.reply)}
-                        </div>
-                        <div class="activity-time">${escapeHTML(activity.time)}</div>
-                    </div>
+        // ========== Load My Posts ==========
+        async function loadMyPosts() {
+            const postsList = document.getElementById('postsList');
+            const refreshBtn = document.getElementById('refreshBtn');
+
+            // Show loading
+            refreshBtn.classList.add('loading');
+            postsList.innerHTML = `
+                <div class="loading-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    <p>Loading your posts...</p>
                 </div>
-            `).join('');
+            `;
+
+            try {
+                const response = await fetch('/api/tweets?max_results=20');
+
+                if (response.status === 401) {
+                    postsList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            <p>Sign in to view your posts</p>
+                            <p class="subtext"><a href="/api/login" style="color: var(--accent);">Sign in with X</a> to load your posts and enable auto-replies.</p>
+                        </div>
+                    `;
+                    refreshBtn.classList.remove('loading');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch posts');
+                }
+
+                const data = await response.json();
+                myPosts = data.tweets || [];
+
+                if (myPosts.length === 0) {
+                    postsList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            <p>No posts found</p>
+                            <p class="subtext">Your recent posts will appear here once you start posting on X.</p>
+                        </div>
+                    `;
+                } else {
+                    renderPosts();
+                }
+
+                updateStats();
+
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                postsList.innerHTML = `
+                    <div class="error-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <p>Couldn't load your posts</p>
+                        <p class="subtext">${escapeHTML(error.message)}</p>
+                    </div>
+                `;
+            }
+
+            refreshBtn.classList.remove('loading');
         }
 
-        // Allow Enter key to add template
+        // ========== Render Posts ==========
+        function renderPosts() {
+            const postsList = document.getElementById('postsList');
+
+            postsList.innerHTML = myPosts.map(post => {
+                const m = post.metrics || {};
+                const isEnabled = enabledPostIds.has(post.id);
+                const replies = m.reply_count || 0;
+                const created = post.created_at ? formatTimeAgo(new Date(post.created_at)) : '';
+                const postReplies = botReplyLog.filter(r => r.tweetId === post.id);
+
+                return `
+                    <div class="post-card ${isEnabled ? 'replies-enabled' : ''}" data-post-id="${post.id}">
+                        <div class="post-body">
+                            <div class="post-text">${escapeHTML(post.text)}</div>
+                            <div class="post-metrics">
+                                <div class="metric">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                    ${m.like_count || 0}
+                                </div>
+                                <div class="metric">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                                    ${m.retweet_count || 0}
+                                </div>
+                                <div class="metric ${replies > 0 ? 'has-replies' : ''}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                    ${replies} replies
+                                </div>
+                                <div class="metric">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    ${m.impression_count || '-'}
+                                </div>
+                            </div>
+                            <div class="post-time">${created}</div>
+                            ${isEnabled ? renderPostRepliesSection(post.id, postReplies) : '<div class="post-replies-section"></div>'}
+                        </div>
+                        <div class="post-toggle">
+                            <label class="toggle-switch small">
+                                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="togglePostReplies('${post.id}', this)">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span class="post-toggle-label ${isEnabled ? 'active' : ''}">${isEnabled ? 'ON' : 'OFF'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderPostRepliesSection(postId, replies) {
+            let content = '';
+            if (replies.length > 0) {
+                content = replies.slice(0, 5).map(r => `
+                    <div class="reply-activity-item">
+                        <div class="reply-avatar">${(r.replyToUser || '?').charAt(0).toUpperCase()}</div>
+                        <div class="reply-details">
+                            <div class="reply-author">${escapeHTML(r.replyToUser || 'User')}</div>
+                            <div class="your-reply-box">
+                                <div class="your-reply-label">Your Auto-Reply</div>
+                                ${escapeHTML(r.replyText)}
+                            </div>
+                            <div class="reply-time">${r.timestamp ? formatTimeAgo(new Date(r.timestamp)) : ''}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                content = `<div class="no-replies-msg">Auto-replies enabled. The bot will reply to new comments on this post.</div>`;
+            }
+
+            return `<div class="post-replies-section" style="display: block;">${content}</div>`;
+        }
+
+        // ========== Per-Post Toggle ==========
+        function togglePostReplies(postId, checkbox) {
+            if (checkbox.checked) {
+                enabledPostIds.add(postId);
+                showToast('Auto-replies enabled for this post', 'success');
+            } else {
+                enabledPostIds.delete(postId);
+                showToast('Auto-replies disabled for this post', 'info');
+            }
+            saveSettings();
+            renderPosts();
+            updateStats();
+        }
+
+        // ========== Stats ==========
+        function updateStats() {
+            document.getElementById('statTotalPosts').textContent = myPosts.length || '-';
+            document.getElementById('statEnabledPosts').textContent = enabledPostIds.size;
+
+            const totalReplies = myPosts.reduce((sum, p) => sum + (p.metrics?.reply_count || 0), 0);
+            document.getElementById('statTotalReplies').textContent = totalReplies || '-';
+
+            document.getElementById('statBotReplies').textContent = botReplyLog.length;
+        }
+
+        // ========== Time Formatting ==========
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // ========== Enter key for template input ==========
         document.getElementById('newTemplateInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -880,9 +1088,9 @@
             }
         });
 
-        // Initialize
+        // ========== Initialize ==========
         loadSettings();
-        renderActivityFeed();
+        loadMyPosts();
     </script>
 </body>
 </html>

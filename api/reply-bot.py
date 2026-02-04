@@ -1,5 +1,19 @@
 """
-Reply Bot Endpoint - Manages reply bot settings and executes replies via X API
+Reply Bot Endpoint - Manages reply bot settings and executes replies to commenters on user's posts.
+
+GET /api/reply-bot
+    Returns bot settings and status.
+
+GET /api/reply-bot?action=replies&tweet_id=XXXXX
+    Fetches replies/comments on a specific user tweet (requires tweet.read scope).
+
+POST /api/reply-bot?action=reply
+    Body: { "tweet_id": "...", "reply_text": "..." }
+    Posts a reply to a specific tweet via X API.
+
+POST /api/reply-bot?action=settings
+    Body: { settings object }
+    Updates bot settings.
 """
 import os
 import json
@@ -14,22 +28,20 @@ from cryptography.fernet import Fernet
 # Default bot settings
 DEFAULT_SETTINGS = {
     'enabled': False,
-    'gm_enabled': False,
+    'gm_enabled': True,
     'gm_templates': [
-        'gm',
-        'gm! hope you have a great day',
-        'gm fren'
+        'GM {NAME}',
+        'Morning {NAME}',
+        'Gmgm {NAME}',
+        'GM',
+        'Gm'
     ],
     'verified_only': True,
-    'frequency': 'every',
-    'active_hours': {
-        'start': '07:00',
-        'end': '23:00'
-    },
+    'reply_speed': '1min',
+    'max_replies_per_post': 10,
+    'enabled_post_ids': [],
     'stats': {
-        'today': 0,
-        'week': 0,
-        'accounts': 0
+        'bot_replies_sent': 0
     }
 }
 
@@ -136,8 +148,7 @@ def get_access_token(headers, encryption_key, client_id, client_secret):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        """Get current bot settings and status."""
-        # Require authentication
+        """Handle GET requests - return settings or fetch replies to a tweet."""
         encryption_key = os.environ.get('ENCRYPTION_KEY')
         client_id = os.environ.get('X_CLIENT_ID')
         client_secret = os.environ.get('X_CLIENT_SECRET')
@@ -150,10 +161,98 @@ class handler(BaseHTTPRequestHandler):
             self._send_json(401, error)
             return
 
-        # Return current settings (in production, these would be loaded from
-        # a database or persistent storage keyed by user ID)
-        settings = dict(DEFAULT_SETTINGS)
-        self._send_json(200, settings)
+        # Parse query parameters
+        parsed = urlparse(self.path)
+        params = parse_qs(parsed.query)
+        action = params.get('action', [None])[0]
+
+        if action == 'replies':
+            # Fetch replies to a specific tweet
+            tweet_id = params.get('tweet_id', [None])[0]
+            if not tweet_id:
+                self._send_json(400, {'error': 'tweet_id is required'})
+                return
+            self._fetch_replies(tweet_id, access_token)
+        else:
+            # Return current settings
+            settings = dict(DEFAULT_SETTINGS)
+            self._send_json(200, settings)
+
+    def _fetch_replies(self, tweet_id, access_token):
+        """Fetch replies/comments on a specific tweet using the search endpoint.
+
+        Note: On the free X API tier, the search endpoint has limited access.
+        We use the tweets search endpoint to find replies to a specific tweet.
+        """
+        # Use the search/recent endpoint to find replies to this tweet
+        search_url = "https://api.twitter.com/2/tweets/search/recent"
+        search_params = {
+            'query': f'conversation_id:{tweet_id} is:reply',
+            'max_results': 20,
+            'tweet.fields': 'author_id,created_at,text,public_metrics,in_reply_to_user_id',
+            'expansions': 'author_id',
+            'user.fields': 'name,username,verified,profile_image_url'
+        }
+
+        try:
+            response = requests.get(
+                search_url,
+                headers={'Authorization': f'Bearer {access_token}'},
+                params=search_params
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                tweets = data.get('data', [])
+                users_list = data.get('includes', {}).get('users', [])
+
+                # Build user lookup
+                users = {u['id']: u for u in users_list}
+
+                # Process replies
+                replies = []
+                for tweet in tweets:
+                    author = users.get(tweet.get('author_id'), {})
+                    replies.append({
+                        'id': tweet.get('id'),
+                        'text': tweet.get('text'),
+                        'created_at': tweet.get('created_at'),
+                        'author': {
+                            'id': tweet.get('author_id'),
+                            'name': author.get('name', 'Unknown'),
+                            'username': author.get('username', ''),
+                            'verified': author.get('verified', False),
+                            'profile_image_url': author.get('profile_image_url', '')
+                        },
+                        'metrics': tweet.get('public_metrics', {})
+                    })
+
+                self._send_json(200, {
+                    'tweet_id': tweet_id,
+                    'replies': replies,
+                    'count': len(replies)
+                })
+            else:
+                # Handle errors (e.g., free tier doesn't have search access)
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', error_data.get('title', f'Status {response.status_code}'))
+                except Exception:
+                    error_msg = f'X API returned status {response.status_code}'
+                    error_data = {}
+
+                self._send_json(response.status_code, {
+                    'error': error_msg,
+                    'details': error_data,
+                    'note': 'The search/recent endpoint may not be available on the free X API tier. Consider upgrading to Basic tier for reply fetching.'
+                })
+
+        except requests.exceptions.Timeout:
+            self._send_json(504, {'error': 'Request to X API timed out'})
+        except requests.exceptions.ConnectionError:
+            self._send_json(502, {'error': 'Failed to connect to X API'})
+        except Exception as e:
+            self._send_json(500, {'error': f'Unexpected error: {str(e)}'})
 
     def do_POST(self):
         """Handle POST requests - update settings or execute a reply."""
@@ -287,15 +386,12 @@ class handler(BaseHTTPRequestHandler):
             settings['gm_templates'] = data['gm_templates']
         if 'verified_only' in data:
             settings['verified_only'] = bool(data['verified_only'])
-        if 'frequency' in data:
-            settings['frequency'] = data['frequency']
-        if 'active_hours' in data and isinstance(data['active_hours'], dict):
-            active_hours = settings['active_hours']
-            if 'start' in data['active_hours']:
-                active_hours['start'] = data['active_hours']['start']
-            if 'end' in data['active_hours']:
-                active_hours['end'] = data['active_hours']['end']
-            settings['active_hours'] = active_hours
+        if 'reply_speed' in data:
+            settings['reply_speed'] = data['reply_speed']
+        if 'max_replies_per_post' in data:
+            settings['max_replies_per_post'] = int(data['max_replies_per_post'])
+        if 'enabled_post_ids' in data and isinstance(data['enabled_post_ids'], list):
+            settings['enabled_post_ids'] = data['enabled_post_ids']
 
         # In production, save settings to persistent storage here
 
